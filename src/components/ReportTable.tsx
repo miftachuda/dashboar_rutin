@@ -117,7 +117,7 @@ const ReportTable = ({ items }: { items: StepTask[] }) => {
               const photo = item.photos?.[0];
 
               const imgUrl = photo
-                ? `https://data.miftachuda.my.id/api/files/additionals/${item.id}/${photo}`
+                ? `https://base.miftachuda.my.id/api/files/additionals/${item.id}/${photo}`
                 : null;
 
               return (

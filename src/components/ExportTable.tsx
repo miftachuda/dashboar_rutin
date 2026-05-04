@@ -64,7 +64,7 @@ const ExportTable = ({ items }: { items: StepTask[] }) => {
         const fileName = photos?.[photos.length - 1]; // 👈 ambil last photo
 
         if (fileName) {
-          const imgUrl = `https://data.miftachuda.my.id/api/files/additionals/${item.id}/${fileName}`;
+          const imgUrl = `https://base.miftachuda.my.id/api/files/additionals/${item.id}/${fileName}`;
           imageMap[i] = await loadImage(imgUrl);
         }
       }),
