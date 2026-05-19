@@ -1,11 +1,5 @@
 import { StepTask } from "@/types/maintenance";
-import {
-  Wrench,
-  CheckCircle2,
-  Clock,
-  ChartNoAxesCombined,
-  NotepadText,
-} from "lucide-react";
+import { Wrench, CheckCircle2, Clock, ChartNoAxesCombined } from "lucide-react";
 import StepsModal from "./CompletedSteps";
 import { useState } from "react";
 
