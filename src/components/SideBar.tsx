@@ -1,12 +1,16 @@
 import {
-  Image,
-  Home,
-  RefreshCw,
-  Filter,
+  LayoutDashboard,
+  Inbox,
+  Users,
   CalendarDays,
-  ClipboardPlus,
+  MessageCircle,
+  BarChart3,
+  Folder,
+  Settings,
+  ChevronRight,
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Sidebar({
   collapsed,
@@ -19,47 +23,196 @@ export default function Sidebar({
   const location = useLocation();
 
   const menus = [
-    { name: "Main", path: "/", icon: Home },
-    { name: "Consumable Materials", path: "/material", icon: ClipboardPlus },
-    { name: "Chemical", path: "/chemical", icon: CalendarDays },
+    {
+      section: "MAIN MENU",
+      items: [
+        {
+          name: "Tracking",
+          path: "/",
+          icon: LayoutDashboard,
+          badge: null,
+        },
+        {
+          name: "Chemical",
+          path: "/chemical",
+          icon: Inbox,
+          badge: null,
+        },
+        {
+          name: "Material",
+          path: "/material",
+          icon: Folder,
+          badge: null,
+        },
+      ],
+    },
+    {
+      section: "Workspace",
+      items: [
+        {
+          name: "Accounts",
+          path: "/accounts",
+          icon: Users,
+        },
+      ],
+    },
+    {
+      section: "General",
+      items: [
+        {
+          name: "Settings",
+          path: "/settings",
+          icon: Settings,
+        },
+      ],
+    },
   ];
 
   return (
     <aside
-      className={`${
-        collapsed ? "w-16" : "w-60"
-      } transition-all duration-300 border-r bg-card flex flex-col sticky top-0 h-screen z-20`}
+      className={`
+        ${collapsed ? "w-[90px]" : "w-[260px]"}
+        bg-sky-100
+        text-sky-950
+        h-screen
+        top-0
+        transition-all
+        duration-300
+        flex
+        flex-col
+        relative
+        border-r
+        border-sky-200
+        overflow-visible
+      `}
     >
-      {/* Header / Toggle */}
-      <div className="h-16 flex items-center justify-between px-3 border-b">
-        {!collapsed && <span className="font-bold">Lube Oil Complex II</span>}
-        <button onClick={() => setCollapsed(!collapsed)}>
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <img src="/logo.png" className="w-7 h-7" alt="Wrench" />
-          </div>
+      {/* Toggle */}
+      <div className="relative overflow-visible">
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="
+      absolute
+      -right-4
+      top-6
+      w-8
+      h-8
+      rounded-full
+      bg-white
+      border
+      border-sky-200
+      shadow-md
+      flex
+      items-center
+      justify-center
+      text-sky-600
+      z-50
+    "
+        >
+          <ChevronRight
+            size={16}
+            className={`transition ${collapsed ? "" : "rotate-180"}`}
+          />
         </button>
       </div>
 
-      <div className="flex flex-col gap-1 p-2">
-        {menus.map((m) => {
-          const Icon = m.icon;
+      {/* Header */}
+      <div className="px-5 pt-6 pb-8 flex items-center gap-3">
+        <div
+          className="
+            w-10
+            h-10
+            rounded-xl
+            bg-sky-500
+            flex
+            items-center
+            justify-center
+            shrink-0
+            shadow-md
+          "
+        >
+          <img src="/logo.png" alt="logo" className="w-6 h-6" />
+        </div>
 
-          return (
-            <button
-              key={m.path}
-              onClick={() => navigate(m.path)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
-                location.pathname === m.path
-                  ? "bg-primary text-white"
-                  : "hover:bg-muted"
-              }`}
-            >
-              <Icon size={18} />
+        {!collapsed && (
+          <div>
+            <h1 className="font-bold text-base leading-none text-sky-900">
+              Lube Oil Complex II
+            </h1>
+          </div>
+        )}
+      </div>
 
-              {!collapsed && <span>{m.name}</span>}
-            </button>
-          );
-        })}
+      {/* Menu */}
+      <div className="flex-1 overflow-y-auto px-3">
+        {menus.map((group) => (
+          <div key={group.section} className="mb-7">
+            {!collapsed && (
+              <p className="text-[11px] uppercase text-sky-500 mb-3 px-3 font-semibold tracking-wide">
+                {group.section}
+              </p>
+            )}
+
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+
+                const active = location.pathname === item.path;
+
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={`
+                      w-full
+                      flex
+                      items-center
+                      ${collapsed ? "justify-center" : "justify-between"}
+                      px-3
+                      py-3
+                      rounded-xl
+                      transition-all
+                      duration-200
+                      group
+                      ${
+                        active
+                          ? "bg-sky-500 text-white shadow-md"
+                          : "text-sky-800 hover:bg-sky-200/70"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={18} />
+
+                      {!collapsed && (
+                        <span className="text-sm font-medium">{item.name}</span>
+                      )}
+                    </div>
+
+                    {!collapsed && item.badge && (
+                      <div
+                        className="
+                          min-w-[20px]
+                          h-5
+                          px-1.5
+                          rounded-md
+                          bg-rose-500
+                          text-white
+                          text-[11px]
+                          flex
+                          items-center
+                          justify-center
+                          font-semibold
+                        "
+                      >
+                        {item.badge}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </aside>
   );

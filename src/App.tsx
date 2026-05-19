@@ -7,6 +7,8 @@ import NotFound from "./pages/NotFound.tsx";
 import MaterialPage from "./pages/Materials.tsx";
 import ChemicalPage from "./pages/Chemicals.tsx";
 import ListKerusakanPage from "./pages/ListKerusakanPage.tsx";
+import SettingPage from "./pages/SettingPage.tsx";
+import AccountPage from "./pages/AccountPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +22,8 @@ const App = () => (
           <Route path="/" element={<ListKerusakanPage />} />
           <Route path="/material" element={<MaterialPage />} />
           <Route path="/chemical" element={<ChemicalPage />} />
+          <Route path="/accounts" element={<AccountPage />} />
+          <Route path="/settings" element={<SettingPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </HashRouter>

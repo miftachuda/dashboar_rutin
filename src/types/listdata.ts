@@ -1,0 +1,18 @@
+export type ListData = {
+  id: string;
+  collectionId: string;
+  collectionName: string;
+  created: string;
+  updated: string;
+  judul: string;
+  issue: string;
+  discipline: string;
+  type: string;
+  unit: string;
+  photo: string[];
+  tag_name: string;
+  reference: string;
+  tracking: string | null;
+  last_update: string;
+  waktu_pelaksanaan: string;
+};
