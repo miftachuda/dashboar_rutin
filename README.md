@@ -2,4 +2,4 @@
 
 ## Project info
 
-**URL**: https://pitstop.miftachuda.my.id
+**URL**: https://rutin.miftachuda.my.id

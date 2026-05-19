@@ -20,13 +20,8 @@ export default function Sidebar({
 
   const menus = [
     { name: "Main", path: "/", icon: Home },
-
-    { name: "Additional Joblists", path: "/additionals", icon: ClipboardPlus },
-    { name: "Restroke CV", path: "/restroke", icon: RefreshCw },
-
-    { name: "Cleaning Strainer", path: "/strainer", icon: Filter },
-    { name: "Daily Activity", path: "/daily", icon: CalendarDays },
-    { name: "Photo Gallery", path: "/photos", icon: Image },
+    { name: "Consumable Materials", path: "/material", icon: ClipboardPlus },
+    { name: "Chemical", path: "/chemical", icon: CalendarDays },
   ];
 
   return (
@@ -37,7 +32,7 @@ export default function Sidebar({
     >
       {/* Header / Toggle */}
       <div className="h-16 flex items-center justify-between px-3 border-b">
-        {!collapsed && <span className="font-bold">Menu</span>}
+        {!collapsed && <span className="font-bold">Lube Oil Complex II</span>}
         <button onClick={() => setCollapsed(!collapsed)}>
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
             <img src="/logo.png" className="w-7 h-7" alt="Wrench" />

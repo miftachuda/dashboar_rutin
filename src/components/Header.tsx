@@ -57,10 +57,10 @@ export default function Header() {
         {/* LEFT: Title */}
         <div>
           <h1 className="text-lg font-display font-bold text-foreground leading-tight">
-            Dashboard Pit Stop LOC II 2026
+            Dashboard Tracking Kerusakan & Perbaikan Peralatan
           </h1>
           <p className="text-xs text-muted-foreground font-mono">
-            Restoring Performance Strengthening Reliability
+            Beyond Lubrication
           </p>
         </div>
 
