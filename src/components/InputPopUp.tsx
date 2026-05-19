@@ -10,7 +10,27 @@ import {
 } from "lucide-react";
 import PocketBase from "pocketbase";
 
-const pb = new PocketBase("http://127.0.0.1:8090");
+const disciplineOptions = [
+  "Rotating",
+  "Stationary",
+  "Instrument",
+  "Electrical",
+];
+const unitOptions = ["002", "021", "022", "023", "024", "025", "041"];
+const typeOptions = [
+  "Valve",
+  "Pipeline",
+  "Heat Exchanger",
+  "Vessel",
+  "Pump",
+  "Compressor",
+  "Motor",
+  "Fin Fan",
+  "Boardesk",
+  "Transmitter",
+  "Burner",
+  "Flange",
+];
 
 type Props = {
   open: boolean;
@@ -18,6 +38,7 @@ type Props = {
   onSaved?: () => void;
 };
 import { WaktuPelaksanaan } from "@/types/enum";
+import { pb } from "@/lib/pocketbase";
 export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
 
@@ -32,6 +53,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
     waktu_pelaksanaan: "Rutin" as (typeof WaktuPelaksanaan)[number],
     last_update: "",
     tracking: "",
+    isDeleted: false,
   });
 
   const handleChange = (
@@ -67,6 +89,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
         waktu_pelaksanaan: "Rutin",
         last_update: "",
         tracking: "",
+        isDeleted: false,
       });
     } catch (err) {
       console.error(err);
@@ -165,6 +188,49 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
         <div className="p-6 space-y-6">
           {/* TOP GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <span className="text-sky-600">
+                  <CalendarDays size={18} />
+                </span>
+                Unit
+              </label>
+
+              <select
+                name="unit"
+                value={formData.unit}
+                onChange={handleChange}
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-200
+                  bg-sky-50/40
+                  px-4
+                  py-3
+                  outline-none
+                  focus:ring-2
+                  focus:ring-sky-300
+                  transition-all
+                "
+              >
+                <option value="" disabled>
+                  Select unit
+                </option>
+                {unitOptions.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <InputField
+              icon={<Tag size={18} />}
+              label="Tag Name"
+              name="tag_name"
+              value={formData.tag_name}
+              onChange={handleChange}
+            />
             <InputField
               icon={<FileText size={18} />}
               label="Judul"
@@ -173,37 +239,78 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
               onChange={handleChange}
             />
 
-            <InputField
-              icon={<Building2 size={18} />}
-              label="Discipline"
-              name="discipline"
-              value={formData.discipline}
-              onChange={handleChange}
-            />
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <span className="text-sky-600">
+                  <Building2 size={18} />
+                </span>
+                Discipline
+              </label>
 
-            <InputField
-              icon={<Wrench size={18} />}
-              label="Type"
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-            />
+              <select
+                name="discipline"
+                value={formData.discipline}
+                onChange={handleChange}
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-200
+                  bg-sky-50/40
+                  px-4
+                  py-3
+                  outline-none
+                  focus:ring-2
+                  focus:ring-sky-300
+                  transition-all
+                "
+              >
+                <option value="" disabled>
+                  Select discipline
+                </option>
+                {disciplineOptions.map((discipline) => (
+                  <option key={discipline} value={discipline}>
+                    {discipline}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <InputField
-              icon={<Tag size={18} />}
-              label="Tag Name"
-              name="tag_name"
-              value={formData.tag_name}
-              onChange={handleChange}
-            />
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <span className="text-sky-600">
+                  <Wrench size={18} />
+                </span>
+                Equipment Type
+              </label>
 
-            <InputField
-              icon={<CalendarDays size={18} />}
-              label="Unit"
-              name="unit"
-              value={formData.unit}
-              onChange={handleChange}
-            />
+              <input
+                type="text"
+                list="type-options"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                placeholder="Select or input Equipment type"
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-200
+                  bg-sky-50/30
+                  px-4
+                  py-3
+                  outline-none
+                  focus:ring-2
+                  focus:ring-sky-300
+                  transition-all
+                "
+              />
+              <datalist id="type-options">
+                {typeOptions.map((type) => (
+                  <option key={type} value={type} />
+                ))}
+              </datalist>
+            </div>
 
             {/* SELECT */}
             <div>
@@ -240,7 +347,30 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
               </select>
             </div>
           </div>
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-2 block">
+              Reference Nota Dinas, Notulen , etc
+            </label>
 
+            <input
+              type="text"
+              name="reference"
+              value={formData.reference}
+              onChange={handleChange}
+              className="
+                w-full
+                rounded-2xl
+                border
+                border-sky-200
+                bg-sky-50/30
+                px-4
+                py-3
+                outline-none
+                focus:ring-2
+                focus:ring-sky-300
+              "
+            />
+          </div>
           {/* ISSUE */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-2 block">
@@ -270,30 +400,6 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
           </div>
 
           {/* REFERENCE */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-2 block">
-              Reference
-            </label>
-
-            <input
-              type="text"
-              name="reference"
-              value={formData.reference}
-              onChange={handleChange}
-              className="
-                w-full
-                rounded-2xl
-                border
-                border-sky-200
-                bg-sky-50/30
-                px-4
-                py-3
-                outline-none
-                focus:ring-2
-                focus:ring-sky-300
-              "
-            />
-          </div>
 
           {/* IMAGE PLACEHOLDER */}
           <div>

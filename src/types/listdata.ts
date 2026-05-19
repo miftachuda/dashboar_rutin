@@ -15,4 +15,6 @@ export type ListData = {
   tracking: string | null;
   last_update: string;
   waktu_pelaksanaan: string;
+  progress: number;
+  isDeleted: boolean;
 };
