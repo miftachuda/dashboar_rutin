@@ -8,7 +8,8 @@ import {
   FileText,
   CalendarDays,
 } from "lucide-react";
-import PocketBase from "pocketbase";
+import { WaktuPelaksanaan } from "@/types/enum";
+import { pb } from "@/lib/pocketbase";
 
 const disciplineOptions = [
   "Rotating",
@@ -37,11 +38,32 @@ type Props = {
   onClose: () => void;
   onSaved?: () => void;
 };
-import { WaktuPelaksanaan } from "@/types/enum";
-import { pb } from "@/lib/pocketbase";
-export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
-  const [saving, setSaving] = useState(false);
 
+const requiredFields = [
+  "unit",
+  "tag_name",
+  "judul",
+  "discipline",
+  "type",
+  "waktu_pelaksanaan",
+  "issue",
+] as const;
+
+const getFieldStateClass = (hasError: boolean, background = "bg-sky-50/40") =>
+  hasError
+    ? "border-red-400 bg-red-50/40 focus:ring-red-300"
+    : `border-sky-200 ${background} focus:ring-sky-300`;
+
+const FieldError = ({ show }: { show: boolean }) =>
+  show ? (
+    <p className="mt-1 text-xs font-semibold text-red-500">
+      This field is required.
+    </p>
+  ) : null;
+
+export default function InputPopUp({ open, onClose, onSaved }: Props) {
+  const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState({
     judul: "",
     issue: "",
@@ -50,7 +72,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
     unit: "",
     tag_name: "",
     reference: "-",
-    waktu_pelaksanaan: "Rutin" as (typeof WaktuPelaksanaan)[number],
+    waktu_pelaksanaan: "",
     last_update: "",
     tracking: "",
     isDeleted: false,
@@ -61,13 +83,33 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    setFieldErrors((current) => ({
+      ...current,
+      [name]: value.trim() === "",
+    }));
   };
 
   async function handleSave() {
+    const nextFieldErrors = requiredFields.reduce<Record<string, boolean>>(
+      (errors, field) => {
+        errors[field] = formData[field].trim() === "";
+        return errors;
+      },
+      {},
+    );
+
+    if (Object.values(nextFieldErrors).some(Boolean)) {
+      setFieldErrors(nextFieldErrors);
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -86,11 +128,12 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
         unit: "",
         tag_name: "",
         reference: "-",
-        waktu_pelaksanaan: "Rutin",
+        waktu_pelaksanaan: "",
         last_update: "",
         tracking: "",
         isDeleted: false,
       });
+      setFieldErrors({});
     } catch (err) {
       console.error(err);
       alert("Failed to save data");
@@ -104,7 +147,6 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
     "Pit Stop",
     "Turn Around",
   ];
-  const [WPSelect, setWPSelect] = useState("Rutin");
 
   if (!open) return null;
 
@@ -154,12 +196,10 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
           "
         >
           <div>
-            <h2 className="text-2xl font-bold text-sky-900">
-              Create Tracking Data
-            </h2>
+            <h2 className="text-2xl font-bold text-sky-900">Create Record</h2>
 
             <p className="text-sm text-sky-700 mt-1">
-              Create new maintenance tracking entry
+              Create new maintenance record entry
             </p>
           </div>
 
@@ -200,19 +240,17 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
                 name="unit"
                 value={formData.unit}
                 onChange={handleChange}
-                className="
+                className={`
                   w-full
                   rounded-2xl
                   border
-                  border-sky-200
-                  bg-sky-50/40
+                  ${getFieldStateClass(fieldErrors.unit)}
                   px-4
                   py-3
                   outline-none
                   focus:ring-2
-                  focus:ring-sky-300
                   transition-all
-                "
+                `}
               >
                 <option value="" disabled>
                   Select unit
@@ -223,6 +261,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
                   </option>
                 ))}
               </select>
+              <FieldError show={fieldErrors.unit} />
             </div>
             <InputField
               icon={<Tag size={18} />}
@@ -230,6 +269,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
               name="tag_name"
               value={formData.tag_name}
               onChange={handleChange}
+              hasError={fieldErrors.tag_name}
             />
             <InputField
               icon={<FileText size={18} />}
@@ -237,6 +277,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
               name="judul"
               value={formData.judul}
               onChange={handleChange}
+              hasError={fieldErrors.judul}
             />
 
             <div>
@@ -251,19 +292,17 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
                 name="discipline"
                 value={formData.discipline}
                 onChange={handleChange}
-                className="
+                className={`
                   w-full
                   rounded-2xl
                   border
-                  border-sky-200
-                  bg-sky-50/40
+                  ${getFieldStateClass(fieldErrors.discipline)}
                   px-4
                   py-3
                   outline-none
                   focus:ring-2
-                  focus:ring-sky-300
                   transition-all
-                "
+                `}
               >
                 <option value="" disabled>
                   Select discipline
@@ -274,6 +313,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
                   </option>
                 ))}
               </select>
+              <FieldError show={fieldErrors.discipline} />
             </div>
 
             <div>
@@ -291,20 +331,19 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
                 value={formData.type}
                 onChange={handleChange}
                 placeholder="Select or input Equipment type"
-                className="
+                className={`
                   w-full
                   rounded-2xl
                   border
-                  border-sky-200
-                  bg-sky-50/30
+                  ${getFieldStateClass(fieldErrors.type, "bg-sky-50/30")}
                   px-4
                   py-3
                   outline-none
                   focus:ring-2
-                  focus:ring-sky-300
                   transition-all
-                "
+                `}
               />
+              <FieldError show={fieldErrors.type} />
               <datalist id="type-options">
                 {typeOptions.map((type) => (
                   <option key={type} value={type} />
@@ -320,31 +359,29 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
 
               <select
                 name="waktu_pelaksanaan"
-                value={WPSelect}
-                onChange={(e) =>
-                  setWPSelect(
-                    e.target.value as (typeof WaktuPelaksanaan)[number],
-                  )
-                }
-                className="
+                value={formData.waktu_pelaksanaan}
+                onChange={handleChange}
+                className={`
                   w-full
                   rounded-2xl
                   border
-                  border-sky-200
-                  bg-sky-50/40
+                  ${getFieldStateClass(fieldErrors.waktu_pelaksanaan)}
                   px-4
                   py-3
                   outline-none
                   focus:ring-2
-                  focus:ring-sky-300
-                "
+                `}
               >
+                <option value="" disabled>
+                  Select waktu pelaksanaan
+                </option>
                 {waktuTypes.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>
                 ))}
               </select>
+              <FieldError show={fieldErrors.waktu_pelaksanaan} />
             </div>
           </div>
           <div>
@@ -383,20 +420,19 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
               onChange={handleChange}
               rows={5}
               placeholder="Describe the issue..."
-              className="
+              className={`
                 w-full
                 rounded-2xl
                 border
-                border-sky-200
-                bg-sky-50/30
+                ${getFieldStateClass(fieldErrors.issue, "bg-sky-50/30")}
                 px-4
                 py-3
                 outline-none
                 resize-none
                 focus:ring-2
-                focus:ring-sky-300
-              "
+              `}
             />
+            <FieldError show={fieldErrors.issue} />
           </div>
 
           {/* REFERENCE */}
@@ -422,11 +458,7 @@ export default function AddMaintenanceModal({ open, onClose, onSaved }: Props) {
                 text-slate-400
               "
             >
-              <p className="font-medium">Upload Section</p>
-
-              <span className="text-sm mt-1">
-                Add PocketBase image upload later
-              </span>
+              <p className="font-medium">Upload Image</p>
             </div>
           </div>
         </div>
@@ -500,12 +532,14 @@ function InputField({
   name,
   value,
   onChange,
+  hasError,
 }: {
   icon: React.ReactNode;
   label: string;
   name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  hasError: boolean;
 }) {
   return (
     <div>
@@ -520,20 +554,19 @@ function InputField({
         name={name}
         value={value}
         onChange={onChange}
-        className="
+        className={`
           w-full
           rounded-2xl
           border
-          border-sky-200
-          bg-sky-50/30
+          ${getFieldStateClass(hasError, "bg-sky-50/30")}
           px-4
           py-3
           outline-none
           focus:ring-2
-          focus:ring-sky-300
           transition-all
-        "
+        `}
       />
+      <FieldError show={hasError} />
     </div>
   );
 }
