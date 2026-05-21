@@ -1,6 +1,6 @@
 import { useState } from "react";
 import imageCompression from "browser-image-compression";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { pb } from "@/lib/pocketbase";
 import { ListData } from "@/types/listdata";
 import {
@@ -46,12 +46,32 @@ const getWaktuPelaksanaanRibbonClass = (value: string) => {
   }
 };
 
+const parsePocketBaseDate = (value: string) => {
+  const trimmedValue = value.trim();
+  const normalizedValue = trimmedValue
+    .replace(" ", "T")
+    .replace(/(?:z|[+-]\d{2}:?\d{2})$/i, "");
+
+  return new Date(normalizedValue);
+};
+
+const formatLocalTimestampForPocketBase = () =>
+  format(new Date(), "yyyy-MM-dd HH:mm:ss.SSS");
+
 const formatTimeAgo = (value: string) => {
-  const date = new Date(value);
+  const date = parsePocketBaseDate(value);
 
   if (Number.isNaN(date.getTime())) return "-";
 
   return formatDistanceToNow(date, { addSuffix: true });
+};
+
+const formatTimelineDate = (value: string) => {
+  const date = parsePocketBaseDate(value);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return format(date, "HH:mm dd-MMM-yyyy");
 };
 
 const createTimelinePointId = () => {
@@ -62,52 +82,72 @@ const createTimelinePointId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-const parseTimelinePoints = (tracking: string | null): TimelinePoint[] => {
+const getTimelineRawPoints = (tracking: unknown) => {
   if (!tracking) return [];
+
+  if (Array.isArray(tracking)) return tracking;
+
+  if (typeof tracking !== "string") return [];
 
   try {
     const parsed = JSON.parse(tracking);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((point) => point && typeof point === "object")
-      .map((point) => ({
-        id:
-          typeof point.id === "string" && point.id.trim()
-            ? point.id
-            : createTimelinePointId(),
-        text: typeof point.text === "string" ? point.text : "",
-        photos: Array.isArray(point.photos)
-          ? point.photos.filter((photo) => typeof photo === "string")
-          : [],
-        createdAt: typeof point.createdAt === "string" ? point.createdAt : "",
-        updatedAt: typeof point.updatedAt === "string" ? point.updatedAt : "",
-      }))
-      .filter((point) => point.text.trim() !== "");
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 };
 
-const getLegacyTracking = (tracking: string | null) => {
-  if (!tracking) return "";
+const parseTimelinePoints = (tracking: unknown): TimelinePoint[] => {
+  const rawPoints = getTimelineRawPoints(tracking);
+
+  return rawPoints
+    .filter((point) => point && typeof point === "object")
+    .map((point) => {
+      const timelinePoint = point as Record<string, unknown>;
+
+      return {
+        id:
+          typeof timelinePoint.id === "string" && timelinePoint.id.trim()
+            ? timelinePoint.id
+            : createTimelinePointId(),
+        text: typeof timelinePoint.text === "string" ? timelinePoint.text : "",
+        photos: Array.isArray(timelinePoint.photos)
+          ? timelinePoint.photos.filter((photo) => typeof photo === "string")
+          : [],
+        createdAt:
+          typeof timelinePoint.createdAt === "string"
+            ? timelinePoint.createdAt
+            : "",
+        updatedAt:
+          typeof timelinePoint.updatedAt === "string"
+            ? timelinePoint.updatedAt
+            : "",
+      };
+    })
+    .filter((point) => point.text.trim() !== "");
+};
+
+const getLegacyTracking = (tracking: unknown) => {
+  if (!tracking || typeof tracking !== "string") return "";
 
   try {
     const parsed = JSON.parse(tracking);
-    return Array.isArray(parsed) ? "" : tracking;
+    return typeof parsed === "string" ? parsed : "";
   } catch {
     return tracking;
   }
 };
 
 const removePhotoFromTimelineTracking = (
-  tracking: string | null,
+  tracking: unknown,
   fileName: string,
 ) => {
   const timelinePoints = parseTimelinePoints(tracking);
-  if (timelinePoints.length === 0) return tracking;
+  if (timelinePoints.length === 0) {
+    return { changed: false, nextTracking: tracking };
+  }
 
-  const now = new Date().toISOString();
+  const now = formatLocalTimestampForPocketBase();
   let changed = false;
 
   const nextTimelinePoints = timelinePoints.map((point) => {
@@ -122,7 +162,10 @@ const removePhotoFromTimelineTracking = (
     };
   });
 
-  return changed ? JSON.stringify(nextTimelinePoints) : tracking;
+  return {
+    changed,
+    nextTracking: changed ? nextTimelinePoints : tracking,
+  };
 };
 
 export default function MaintenanceCardList({
@@ -166,6 +209,12 @@ export default function MaintenanceCardList({
   >(null);
   const [timelineSavingId, setTimelineSavingId] = useState<string | null>(null);
   const [timelineError, setTimelineError] = useState("");
+  const [detailProgressValue, setDetailProgressValue] = useState<number | null>(
+    null,
+  );
+  const [updatingProgressId, setUpdatingProgressId] = useState<string | null>(
+    null,
+  );
 
   const previewPhotos = preview?.item.photo ?? [];
   const previewSrc = preview
@@ -188,6 +237,10 @@ export default function MaintenanceCardList({
     ? timelineCompressingId === detailItem.id ||
       timelineSavingId === detailItem.id
     : false;
+  const detailProgress = detailItem
+    ? (detailProgressValue ??
+      Math.min(Math.max(detailItem.progress ?? 0, 0), 100))
+    : 0;
 
   const clearPendingPhotos = (itemId: string) => {
     setPendingPhotos((current) => {
@@ -309,7 +362,7 @@ export default function MaintenanceCardList({
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to compress timeline image");
+      alert("Failed to compress  image");
     } finally {
       setTimelineCompressingId(null);
       event.target.value = "";
@@ -347,7 +400,7 @@ export default function MaintenanceCardList({
           .slice(-timelinePendingPhotos.length);
       }
 
-      const now = new Date().toISOString();
+      const now = formatLocalTimestampForPocketBase();
       const legacyTrackingPoint = detailLegacyTracking
         ? [
             {
@@ -370,7 +423,7 @@ export default function MaintenanceCardList({
           updatedAt: now,
         },
       ];
-      const nextTracking = JSON.stringify(nextTimelinePoints);
+      const nextTracking = nextTimelinePoints;
       const updatedItem = await pb
         .collection("db_maintenance")
         .update(detailItem.id, {
@@ -392,9 +445,44 @@ export default function MaintenanceCardList({
       onDataChanged?.();
     } catch (error) {
       console.error(error);
-      alert("Failed to add timeline point");
+      alert("Failed to add timeline");
     } finally {
       setTimelineSavingId(null);
+    }
+  };
+
+  const handleDetailProgressSave = async (
+    item: ListData,
+    nextProgress: number,
+  ) => {
+    const progress = Math.min(Math.max(Math.round(nextProgress), 0), 100);
+    const currentProgress = Math.min(Math.max(item.progress ?? 0, 0), 100);
+
+    if (progress === currentProgress || updatingProgressId === item.id) return;
+
+    try {
+      setUpdatingProgressId(item.id);
+      const updatedItem = await pb.collection("db_maintenance").update(item.id, {
+        progress,
+      });
+
+      setDetailItem((current) => {
+        if (!current || current.id !== item.id) return current;
+
+        return {
+          ...current,
+          progress: updatedItem.progress ?? progress,
+          updated: updatedItem.updated ?? current.updated,
+        };
+      });
+      setDetailProgressValue(null);
+      onDataChanged?.();
+    } catch (error) {
+      console.error(error);
+      setDetailProgressValue(null);
+      alert("Failed to update progress");
+    } finally {
+      setUpdatingProgressId(null);
     }
   };
 
@@ -414,6 +502,14 @@ export default function MaintenanceCardList({
         reference: nextReference,
       });
       element.value = nextReference;
+      setDetailItem((current) =>
+        current?.id === item.id
+          ? {
+              ...current,
+              reference: nextReference,
+            }
+          : current,
+      );
       onDataChanged?.();
     } catch (error) {
       console.error(error);
@@ -496,12 +592,10 @@ export default function MaintenanceCardList({
 
       const formData = new FormData();
       formData.append("photo-", fileName);
-      const nextTracking = removePhotoFromTimelineTracking(
-        item.tracking,
-        fileName,
-      );
-      if (nextTracking !== item.tracking) {
-        formData.append("tracking", nextTracking ?? "");
+      const { changed: didTimelineChange, nextTracking } =
+        removePhotoFromTimelineTracking(item.tracking, fileName);
+      if (didTimelineChange) {
+        formData.append("tracking", JSON.stringify(nextTracking));
       }
 
       const updatedItem = await pb
@@ -557,7 +651,7 @@ export default function MaintenanceCardList({
 
   return (
     <>
-      <div className="flex flex-col gap-1">
+      <div className="flex w-full flex-col gap-1">
         {data.map((item) => {
           const itemPendingPhotos = pendingPhotos[item.id] ?? [];
           const isPhotoBusy =
@@ -639,12 +733,28 @@ export default function MaintenanceCardList({
                     tag={item.tag_name}
                     unit={item.unit}
                   />
-                  <div>
-                    <h2 className="text-xl font-bold text-sky-900">
-                      {item.judul}
-                    </h2>
+                  <div className="flex items-start gap-3 pr-24">
+                    {item.photo?.[0] ? (
+                      <img
+                        src={pb.files.getURL(item, item.photo[0])}
+                        alt={`${item.judul} cover`}
+                        className="h-16 w-20 shrink-0 rounded-xl border border-sky-100 object-cover shadow-sm"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-sky-200 bg-white/60 text-sky-300">
+                        <ImageIcon size={22} />
+                      </div>
+                    )}
 
-                    <p className="text-sm text-sky-700 mt-1">{item.issue}</p>
+                    <div className="min-w-0">
+                      <h2 className="truncate text-xl font-bold text-sky-900">
+                        {item.judul}
+                      </h2>
+
+                      <p className="mt-1 line-clamp-2 text-sm text-sky-700">
+                        {item.issue}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-3 max-w-md">
@@ -664,49 +774,6 @@ export default function MaintenanceCardList({
 
               {/* BODY */}
               <div className="px-6 py-0">
-                {/* REFERENCE */}
-                <div className="mt-1">
-                  <div className="mb-1 flex items-center justify-between gap-1 text-xs font-semibold text-slate-400">
-                    <span>Ref Nota Dinas, Notulen , etc</span>
-                    {updatingReferenceId === item.id && (
-                      <span className="inline-flex items-center gap-1 text-sky-600">
-                        <Loader2 size={13} className="animate-spin" />
-                        Saving...
-                      </span>
-                    )}
-                  </div>
-
-                  <input
-                    type="text"
-                    defaultValue={item.reference || "-"}
-                    onBlur={(event) =>
-                      handleReferenceBlur(item, event.currentTarget)
-                    }
-                    className="
-                  h-12
-                  w-full
-                  bg-slate-50
-                  border
-                  border-slate-200
-                  rounded-xl
-                  px-2
-                  py-1
-                  text-sm
-                  text-slate-700
-                  outline-none
-                  transition-all
-                  focus:border-sky-300
-                  focus:bg-white
-                  focus:ring-2
-                  focus:ring-sky-100
-                  disabled:cursor-not-allowed
-                  disabled:opacity-70
-                "
-                    disabled={updatingReferenceId === item.id}
-                    aria-label={`Edit reference for ${item.judul}`}
-                  />
-                </div>
-
                 {/* FOOTER */}
                 <div
                   className="
@@ -885,66 +952,157 @@ export default function MaintenanceCardList({
                 <p className="mt-2 text-sm leading-6 text-sky-700">
                   {detailItem.issue || "-"}
                 </p>
+
+                <div className="mt-2 max-w-xl">
+                  <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-500">
+                    <span>Ref Nota Dinas, Notulen , etc</span>
+                    {updatingReferenceId === detailItem.id && (
+                      <span className="inline-flex items-center gap-1 text-sky-600">
+                        <Loader2 size={12} className="animate-spin" />
+                        Saving...
+                      </span>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    defaultValue={detailItem.reference || "-"}
+                    onBlur={(event) =>
+                      handleReferenceBlur(detailItem, event.currentTarget)
+                    }
+                    disabled={updatingReferenceId === detailItem.id}
+                    className="h-9 w-full rounded-lg border border-sky-200 bg-white/80 px-2 py-1 text-xs text-slate-700 outline-none transition-all focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-70"
+                    aria-label={`Edit reference for ${detailItem.judul}`}
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm font-semibold text-sky-700">
+                    <span>Progress</span>
+                    <span className="inline-flex items-center gap-2">
+                      {updatingProgressId === detailItem.id && (
+                        <Loader2 size={14} className="animate-spin" />
+                      )}
+                      {detailProgress}%
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={detailProgress}
+                      onChange={(event) =>
+                        setDetailProgressValue(Number(event.target.value))
+                      }
+                      onMouseUp={() =>
+                        handleDetailProgressSave(detailItem, detailProgress)
+                      }
+                      onTouchEnd={() =>
+                        handleDetailProgressSave(detailItem, detailProgress)
+                      }
+                      onBlur={() =>
+                        handleDetailProgressSave(detailItem, detailProgress)
+                      }
+                      disabled={updatingProgressId === detailItem.id}
+                      className="h-2 w-full cursor-pointer appearance-none rounded-full bg-sky-100 accent-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{
+                        background: `linear-gradient(to right, rgb(14 165 233) ${detailProgress}%, rgb(224 242 254) ${detailProgress}%)`,
+                      }}
+                    />
+                    {updatingProgressId === detailItem.id && (
+                      <p className="text-xs font-semibold text-sky-600">
+                        Saving progress...
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="space-y-6 p-6">
-              <div>
-                <div className="mb-2 flex items-center justify-between text-sm font-semibold text-sky-700">
-                  <span>Progress</span>
-                  <span>
-                    {Math.min(Math.max(detailItem.progress ?? 0, 0), 100)}%
-                  </span>
-                </div>
-                <div className="h-3 overflow-hidden rounded-full bg-sky-100">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500"
-                    style={{
-                      width: `${Math.min(Math.max(detailItem.progress ?? 0, 0), 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <DetailField label="Discipline" value={detailItem.discipline} />
-                <DetailField label="Type" value={detailItem.type} />
-                <DetailField label="Tag" value={detailItem.tag_name} />
-                <DetailField label="Unit" value={detailItem.unit} />
-                <DetailField
-                  label="Waktu Pelaksanaan"
-                  value={detailItem.waktu_pelaksanaan}
-                />
-                <DetailField
-                  label="Last Update"
-                  value={detailItem.last_update}
-                />
-                <DetailField
-                  label="Reference"
-                  value={detailItem.reference || "-"}
-                />
-                <DetailField
-                  label="Created"
-                  value={formatTimeAgo(detailItem.created)}
-                />
-                <DetailField
-                  label="Updated"
-                  value={formatTimeAgo(detailItem.updated)}
-                />
-              </div>
-
               <div className="rounded-3xl border border-sky-100 bg-sky-50/30 p-5">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-sky-950">Timeline</h3>
-                    <p className="text-sm text-sky-700">
-                      Tambah update pekerjaan dengan gambar yang terkoneksi ke
-                      point timeline.
-                    </p>
+                    <h3 className="text-lg font-bold text-sky-950">
+                      Timeline Pekerjaan
+                    </h3>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-sky-100 bg-white p-4">
+                <div className="space-y-4">
+                  {detailLegacyTracking &&
+                    detailTimelinePoints.length === 0 && (
+                      <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                          Legacy Tracking
+                        </div>
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                          {detailLegacyTracking}
+                        </p>
+                      </div>
+                    )}
+
+                  {detailTimelinePoints.length === 0 &&
+                  !detailLegacyTracking ? (
+                    <div className="rounded-2xl border border-dashed border-sky-200 bg-white px-4 py-8 text-center text-sm font-medium text-slate-400">
+                      No timeline point yet.
+                    </div>
+                  ) : (
+                    detailTimelinePoints.map((point) => (
+                      <div
+                        key={point.id}
+                        className="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm"
+                      >
+                        <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                          {point.text}
+                        </p>
+
+                        {point.photos.length > 0 && (
+                          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+                            {point.photos.map((photo) => {
+                              const photoIndex = detailItem.photo.findIndex(
+                                (itemPhoto) => itemPhoto === photo,
+                              );
+
+                              return (
+                                <button
+                                  key={`${point.id}-${photo}`}
+                                  type="button"
+                                  onClick={() => {
+                                    if (photoIndex >= 0) {
+                                      setPreview({
+                                        item: detailItem,
+                                        index: photoIndex,
+                                      });
+                                    }
+                                  }}
+                                  className="rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
+                                  aria-label="Open timeline photo"
+                                >
+                                  <img
+                                    src={pb.files.getURL(detailItem, photo)}
+                                    alt="Timeline photo"
+                                    className="h-24 w-full rounded-xl border border-slate-200 object-cover transition-all hover:scale-[1.01]"
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 text-[10px]  italic font-medium text-slate-500 sm:flex-row sm:gap-4">
+                          <span>
+                            Created: {formatTimelineDate(point.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-sky-100 bg-white p-4">
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Timeline Point
                   </label>
@@ -995,7 +1153,7 @@ export default function MaintenanceCardList({
                         )}
                         {timelineCompressingId === detailItem.id
                           ? "Compressing..."
-                          : "Add Timeline Image"}
+                          : " Image"}
                       </label>
 
                       {timelinePendingPhotos.length > 0 && (
@@ -1023,7 +1181,7 @@ export default function MaintenanceCardList({
                       )}
                       {timelineSavingId === detailItem.id
                         ? "Adding..."
-                        : "Add Timeline Point"}
+                        : "Add to Timeline"}
                     </button>
                   </div>
 
@@ -1038,83 +1196,6 @@ export default function MaintenanceCardList({
                         />
                       ))}
                     </div>
-                  )}
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  {detailLegacyTracking &&
-                    detailTimelinePoints.length === 0 && (
-                      <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
-                        <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                          Legacy Tracking
-                        </div>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                          {detailLegacyTracking}
-                        </p>
-                      </div>
-                    )}
-
-                  {detailTimelinePoints.length === 0 &&
-                  !detailLegacyTracking ? (
-                    <div className="rounded-2xl border border-dashed border-sky-200 bg-white px-4 py-8 text-center text-sm font-medium text-slate-400">
-                      No timeline point yet.
-                    </div>
-                  ) : (
-                    detailTimelinePoints
-                      .slice()
-                      .reverse()
-                      .map((point) => (
-                        <div
-                          key={point.id}
-                          className="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm"
-                        >
-                          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                            {point.text}
-                          </p>
-
-                          {point.photos.length > 0 && (
-                            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-                              {point.photos.map((photo) => {
-                                const photoIndex = detailItem.photo.findIndex(
-                                  (itemPhoto) => itemPhoto === photo,
-                                );
-
-                                return (
-                                  <button
-                                    key={`${point.id}-${photo}`}
-                                    type="button"
-                                    onClick={() => {
-                                      if (photoIndex >= 0) {
-                                        setPreview({
-                                          item: detailItem,
-                                          index: photoIndex,
-                                        });
-                                      }
-                                    }}
-                                    className="rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
-                                    aria-label="Open timeline photo"
-                                  >
-                                    <img
-                                      src={pb.files.getURL(detailItem, photo)}
-                                      alt="Timeline photo"
-                                      className="h-24 w-full rounded-xl border border-slate-200 object-cover transition-all hover:scale-[1.01]"
-                                    />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          <div className="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 text-xs font-medium text-slate-500 sm:flex-row sm:gap-4">
-                            <span>
-                              Created: {formatTimeAgo(point.createdAt)}
-                            </span>
-                            <span>
-                              Updated: {formatTimeAgo(point.updatedAt)}
-                            </span>
-                          </div>
-                        </div>
-                      ))
                   )}
                 </div>
               </div>

@@ -12,7 +12,7 @@ export type ListData = {
   photo: string[];
   tag_name: string;
   reference: string;
-  tracking: string | null;
+  tracking: unknown;
   last_update: string;
   waktu_pelaksanaan: string;
   progress: number;

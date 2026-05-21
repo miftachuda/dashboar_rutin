@@ -52,7 +52,7 @@ const valueColorPalettes = [
   },
 ];
 
-const getValueColorPalette = (value: string) => {
+export const getValueColorPalette = (value: string) => {
   const normalizedValue = value.trim().toLowerCase();
   const hash = Array.from(normalizedValue).reduce(
     (total, character) => total + character.charCodeAt(0),

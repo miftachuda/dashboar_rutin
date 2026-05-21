@@ -74,13 +74,15 @@ export default function Sidebar({
         ${collapsed ? "w-[90px]" : "w-[260px]"}
         bg-sky-100
         text-sky-950
-        h-screen
+        sticky
         top-0
+        h-screen
+        shrink-0
+        z-30
         transition-all
         duration-300
         flex
         flex-col
-        relative
         border-r
         border-sky-200
         overflow-visible
@@ -105,8 +107,7 @@ export default function Sidebar({
       items-center
       justify-center
       text-sky-600
-      z-50
-    "
+      z-40    "
         >
           <ChevronRight
             size={16}

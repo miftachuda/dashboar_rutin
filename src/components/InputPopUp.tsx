@@ -1,4 +1,5 @@
 import { useState } from "react";
+import imageCompression from "browser-image-compression";
 import {
   X,
   Save,
@@ -7,6 +8,9 @@ import {
   Tag,
   FileText,
   CalendarDays,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
 } from "lucide-react";
 import { WaktuPelaksanaan } from "@/types/enum";
 import { pb } from "@/lib/pocketbase";
@@ -39,6 +43,25 @@ type Props = {
   onSaved?: () => void;
 };
 
+type PendingPhoto = {
+  file: File;
+  previewUrl: string;
+};
+
+const createInitialFormData = () => ({
+  judul: "",
+  issue: "",
+  discipline: "",
+  type: "",
+  unit: "",
+  tag_name: "",
+  reference: "-",
+  waktu_pelaksanaan: "",
+  last_update: "",
+  tracking: "",
+  isDeleted: false,
+});
+
 const requiredFields = [
   "unit",
   "tag_name",
@@ -61,22 +84,39 @@ const FieldError = ({ show }: { show: boolean }) =>
     </p>
   ) : null;
 
+const waitForNextPaint = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+
 export default function InputPopUp({ open, onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
+  const [compressingPhotos, setCompressingPhotos] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
-  const [formData, setFormData] = useState({
-    judul: "",
-    issue: "",
-    discipline: "",
-    type: "",
-    unit: "",
-    tag_name: "",
-    reference: "-",
-    waktu_pelaksanaan: "",
-    last_update: "",
-    tracking: "",
-    isDeleted: false,
-  });
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  const [formData, setFormData] = useState(createInitialFormData);
+
+  const clearPendingPhotos = () => {
+    setPendingPhotos((current) => {
+      current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+      return [];
+    });
+  };
+
+  const removePendingPhoto = (previewUrl: string) => {
+    setPendingPhotos((current) => {
+      const target = current.find((photo) => photo.previewUrl === previewUrl);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+
+      return current.filter((photo) => photo.previewUrl !== previewUrl);
+    });
+  };
+
+  const handleClose = () => {
+    clearPendingPhotos();
+    setFieldErrors({});
+    onClose();
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -96,6 +136,41 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
     }));
   };
 
+  const handlePhotoSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    try {
+      setCompressingPhotos(true);
+      await waitForNextPaint();
+
+      for (const file of files) {
+        const compressedFile = await imageCompression(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1600,
+          useWebWorker: true,
+        });
+
+        setPendingPhotos((current) => [
+          ...current,
+          {
+            file: compressedFile,
+            previewUrl: URL.createObjectURL(compressedFile),
+          },
+        ]);
+        await waitForNextPaint();
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to compress image");
+    } finally {
+      setCompressingPhotos(false);
+      event.target.value = "";
+    }
+  };
+
   async function handleSave() {
     const nextFieldErrors = requiredFields.reduce<Record<string, boolean>>(
       (errors, field) => {
@@ -113,27 +188,22 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
     try {
       setSaving(true);
 
-      await pb.collection("db_maintenance").create({
-        ...formData,
+      const dataToSave = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        dataToSave.append(key, String(value));
       });
+      pendingPhotos.forEach((photo) => {
+        dataToSave.append("photo", photo.file, photo.file.name);
+      });
+
+      await pb.collection("db_maintenance").create(dataToSave);
 
       onSaved?.();
       onClose();
 
-      setFormData({
-        judul: "",
-        issue: "",
-        discipline: "",
-        type: "",
-        unit: "",
-        tag_name: "",
-        reference: "-",
-        waktu_pelaksanaan: "",
-        last_update: "",
-        tracking: "",
-        isDeleted: false,
-      });
+      setFormData(createInitialFormData());
       setFieldErrors({});
+      clearPendingPhotos();
     } catch (err) {
       console.error(err);
       alert("Failed to save data");
@@ -204,7 +274,7 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
           </div>
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="
               w-10
               h-10
@@ -437,28 +507,86 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
 
           {/* REFERENCE */}
 
-          {/* IMAGE PLACEHOLDER */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-3 block">
-              Documentation Images
+              Photos
             </label>
 
-            <div
-              className="
-                h-52
-                rounded-3xl
-                border-2
-                border-dashed
-                border-sky-200
-                bg-sky-50/30
-                flex
-                flex-col
-                items-center
-                justify-center
-                text-slate-400
-              "
-            >
-              <p className="font-medium">Upload Image</p>
+            <div className="rounded-3xl border-2 border-dashed border-sky-200 bg-sky-50/30 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 text-slate-500">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-sky-500 shadow-sm">
+                    <ImageIcon size={22} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      Upload image documentation
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Images are compressed before being uploaded.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    id="create-photo-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="create-photo-upload"
+                    aria-disabled={saving || compressingPhotos}
+                    className={`inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 transition-all hover:bg-sky-50 ${
+                      saving || compressingPhotos
+                        ? "pointer-events-none cursor-not-allowed opacity-60"
+                        : "cursor-pointer"
+                    }`}
+                  >
+                    {compressingPhotos ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <Plus size={15} />
+                    )}
+                    {compressingPhotos
+                      ? "Compressing..."
+                      : pendingPhotos.length > 0
+                        ? "Add Photos"
+                        : "Select Photos"}
+                  </label>
+
+                </div>
+              </div>
+
+              {pendingPhotos.length > 0 ? (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {pendingPhotos.map((photo, idx) => (
+                    <div key={`${photo.previewUrl}-${idx}`} className="relative">
+                      <img
+                        src={photo.previewUrl}
+                        alt={`Selected documentation ${idx + 1}`}
+                        className="h-28 w-full rounded-2xl border border-sky-100 object-cover shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePendingPhoto(photo.previewUrl)}
+                        disabled={saving || compressingPhotos}
+                        className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-600/90 text-white shadow-lg transition-all hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label={`Remove selected photo ${idx + 1}`}
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4 flex h-28 items-center justify-center rounded-2xl border border-dashed border-sky-200 bg-white/60 text-sm font-medium text-slate-400">
+                  No images selected
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -479,7 +607,7 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
           "
         >
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="
               px-5
               py-3
@@ -496,7 +624,7 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
 
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || compressingPhotos}
             className="
               px-6
               py-3
