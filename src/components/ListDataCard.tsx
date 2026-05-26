@@ -462,9 +462,11 @@ export default function MaintenanceCardList({
 
     try {
       setUpdatingProgressId(item.id);
-      const updatedItem = await pb.collection("db_maintenance").update(item.id, {
-        progress,
-      });
+      const updatedItem = await pb
+        .collection("db_maintenance")
+        .update(item.id, {
+          progress,
+        });
 
       setDetailItem((current) => {
         if (!current || current.id !== item.id) return current;
@@ -1464,18 +1466,5 @@ export default function MaintenanceCardList({
         </div>
       )}
     </>
-  );
-}
-
-function DetailField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-        {label}
-      </div>
-      <div className="mt-1 text-sm font-semibold text-slate-800">
-        {value || "-"}
-      </div>
-    </div>
   );
 }

@@ -445,8 +445,13 @@ const ListKerusakanPage: React.FC = () => {
           >
             {exportingPdf ? "Exporting..." : "Export PDF"}
           </button>
+        </div>
 
+        <div className="flex w-full flex-col gap-2 rounded-2xl border border-sky-100 bg-white/70 p-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Unit
+            </span>
             <button
               type="button"
               onClick={() => setSelectedUnit("")}
@@ -479,9 +484,7 @@ const ListKerusakanPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
 
-        <div className="flex w-full flex-col gap-2 rounded-2xl border border-sky-100 bg-white/70 p-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
               Discipline
