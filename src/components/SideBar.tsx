@@ -156,9 +156,7 @@ export default function Sidebar({
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
-
                 const active = location.pathname === item.path;
-
                 return (
                   <button
                     key={item.path}
