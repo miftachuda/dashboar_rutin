@@ -80,18 +80,19 @@ const groupDataByUnitAndDiscipline = (data: ListData[]) => {
   return grouped;
 };
 
-const sortByKnownOrder = (knownOrder: string[]) => (left: string, right: string) => {
-  const leftIndex = knownOrder.indexOf(left);
-  const rightIndex = knownOrder.indexOf(right);
+const sortByKnownOrder =
+  (knownOrder: string[]) => (left: string, right: string) => {
+    const leftIndex = knownOrder.indexOf(left);
+    const rightIndex = knownOrder.indexOf(right);
 
-  if (leftIndex !== -1 || rightIndex !== -1) {
-    if (leftIndex === -1) return 1;
-    if (rightIndex === -1) return -1;
-    return leftIndex - rightIndex;
-  }
+    if (leftIndex !== -1 || rightIndex !== -1) {
+      if (leftIndex === -1) return 1;
+      if (rightIndex === -1) return -1;
+      return leftIndex - rightIndex;
+    }
 
-  return left.localeCompare(right);
-};
+    return left.localeCompare(right);
+  };
 
 const ListKerusakanPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -99,8 +100,7 @@ const ListKerusakanPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedDiscipline, setSelectedDiscipline] = useState("");
-  const [selectedWaktuPelaksanaan, setSelectedWaktuPelaksanaan] =
-    useState("");
+  const [selectedWaktuPelaksanaan, setSelectedWaktuPelaksanaan] = useState("");
   const [listdata, setlistData] = useState<ListData[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -232,7 +232,15 @@ const ListKerusakanPage: React.FC = () => {
       for (const unit of sortedUnits) {
         ensurePageSpace(18);
         doc.setFillColor(14, 165, 233);
-        doc.roundedRect(marginX, cursorY - 5, pageWidth - marginX * 2, 8, 2, 2, "F");
+        doc.roundedRect(
+          marginX,
+          cursorY - 5,
+          pageWidth - marginX * 2,
+          8,
+          2,
+          2,
+          "F",
+        );
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
@@ -281,7 +289,9 @@ const ListKerusakanPage: React.FC = () => {
           autoTable(doc, {
             startY: cursorY,
             margin: { left: marginX, right: marginX },
-            head: [["No", "Picture", "Tag", "Judul", "Issue", "Waktu Pelaksanaan"]],
+            head: [
+              ["No", "Picture", "Tag", "Judul", "Issue", "Waktu Pelaksanaan"],
+            ],
             body: exportRows.map((row) => [
               row.no,
               row.imageData ? "" : "-",
@@ -348,7 +358,12 @@ const ListKerusakanPage: React.FC = () => {
         <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-500 to-cyan-500 p-5 text-white shadow-sm xl:col-span-1">
             <p className="text-sm font-semibold uppercase tracking-wide text-sky-100">
-              100% Complete
+              {scopedListData.length > 0
+                ? Math.round(
+                    (completedMaintenanceCount / scopedListData.length) * 100,
+                  )
+                : 0}
+              % Complete
             </p>
             <div className="mt-3 flex items-end gap-2">
               <span className="text-4xl font-bold leading-none">
@@ -549,9 +564,7 @@ const ListKerusakanPage: React.FC = () => {
                   key={waktuPelaksanaan}
                   type="button"
                   onClick={() =>
-                    setSelectedWaktuPelaksanaan(
-                      active ? "" : waktuPelaksanaan,
-                    )
+                    setSelectedWaktuPelaksanaan(active ? "" : waktuPelaksanaan)
                   }
                   className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
                     active

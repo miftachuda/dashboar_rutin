@@ -38,34 +38,34 @@ export default function Sidebar({
           icon: Inbox,
           badge: null,
         },
-        {
-          name: "Material",
-          path: "/material",
-          icon: Folder,
-          badge: null,
-        },
+        // {
+        //   name: "Material",
+        //   path: "/material",
+        //   icon: Folder,
+        //   badge: null,
+        // },
       ],
     },
-    {
-      section: "Workspace",
-      items: [
-        {
-          name: "Accounts",
-          path: "/accounts",
-          icon: Users,
-        },
-      ],
-    },
-    {
-      section: "General",
-      items: [
-        {
-          name: "Settings",
-          path: "/settings",
-          icon: Settings,
-        },
-      ],
-    },
+    // {
+    //   section: "Workspace",
+    //   items: [
+    //     {
+    //       name: "Accounts",
+    //       path: "/accounts",
+    //       icon: Users,
+    //     },
+    //   ],
+    // },
+    // {
+    //   section: "General",
+    //   items: [
+    //     {
+    //       name: "Settings",
+    //       path: "/settings",
+    //       icon: Settings,
+    //     },
+    //   ],
+    // },
   ];
 
   return (
