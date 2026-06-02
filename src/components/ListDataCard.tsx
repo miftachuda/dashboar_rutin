@@ -753,10 +753,10 @@ export default function MaintenanceCardList({
                         {item.judul}
                       </h2>
 
-                      <p className="mt-1 line-clamp-2 flex flex-row text-sm text-sky-700">
+                      <div className="mt-1 line-clamp-2 flex flex-row text-sm text-sky-700">
                         <div className="font-bold mr-1">ISSUE : </div>
                         {item.issue}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -952,13 +952,13 @@ export default function MaintenanceCardList({
                 <h2 className="mt-1 text-2xl font-bold text-sky-950">
                   {detailItem.judul}
                 </h2>
-                <p className="mt-1 text-sm leading-6 flex flex-row text-sky-700">
+                <div className="mt-1 text-sm leading-6 flex flex-row text-sky-700">
                   <div className="font-bold mr-1">ISSUE : </div>
                   {detailItem.issue || "-"}
-                </p>
+                </div>
 
-                <div className="mt-1 max-w-xl">
-                  <div className="mb-0 flex items-center justify-between gap-2 text-[12px] font-semibold text-slate-500">
+                <div className="mt-1 flex max-w-xl items-center gap-3 text-[12px]">
+                  <div className="flex shrink-0 items-center gap-2 font-semibold text-slate-500">
                     <span>Ref Nota Dinas, Notulen, etc</span>
                     {updatingReferenceId === detailItem.id && (
                       <span className="inline-flex items-center text-sky-600">
@@ -967,7 +967,6 @@ export default function MaintenanceCardList({
                       </span>
                     )}
                   </div>
-
                   <input
                     type="text"
                     defaultValue={detailItem.reference || "-"}
@@ -975,7 +974,7 @@ export default function MaintenanceCardList({
                       handleReferenceBlur(detailItem, event.currentTarget)
                     }
                     disabled={updatingReferenceId === detailItem.id}
-                    className="h-7 w-full border-0 bg-transparent px-0 py-0 text-[12px] leading-6 text-slate-700 outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="h-7 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[12px] leading-6 text-slate-700 outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
                     aria-label={`Edit reference for ${detailItem.judul}`}
                   />
                 </div>

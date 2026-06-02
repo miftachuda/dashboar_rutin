@@ -454,8 +454,8 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
               <FieldError show={fieldErrors.waktu_pelaksanaan} />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1 block">
+          <div className="flex items-center gap-3">
+            <label className="w-56 shrink-0 text-sm font-semibold text-slate-700">
               Reference Nota Dinas, Notulen , etc
             </label>
 
@@ -465,7 +465,8 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
               value={formData.reference}
               onChange={handleChange}
               className="
-                w-full
+                min-w-0
+                flex-1
                 rounded-2xl
                 border
                 border-sky-200
