@@ -455,7 +455,7 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
             </div>
           </div>
           <div>
-            <label className="text-sm font-semibold text-slate-700 mb-2 block">
+            <label className="text-sm font-semibold text-slate-700 mb-1 block">
               Reference Nota Dinas, Notulen , etc
             </label>
 
@@ -557,14 +557,16 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
                         ? "Add Photos"
                         : "Select Photos"}
                   </label>
-
                 </div>
               </div>
 
               {pendingPhotos.length > 0 ? (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {pendingPhotos.map((photo, idx) => (
-                    <div key={`${photo.previewUrl}-${idx}`} className="relative">
+                    <div
+                      key={`${photo.previewUrl}-${idx}`}
+                      className="relative"
+                    >
                       <img
                         src={photo.previewUrl}
                         alt={`Selected documentation ${idx + 1}`}

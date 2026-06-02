@@ -753,7 +753,8 @@ export default function MaintenanceCardList({
                         {item.judul}
                       </h2>
 
-                      <p className="mt-1 line-clamp-2 text-sm text-sky-700">
+                      <p className="mt-1 line-clamp-2 flex flex-row text-sm text-sky-700">
+                        <div className="font-bold mr-1">ISSUE : </div>
                         {item.issue}
                       </p>
                     </div>
@@ -948,18 +949,19 @@ export default function MaintenanceCardList({
                   unit={detailItem.unit}
                 />
 
-                <h2 className="mt-4 text-2xl font-bold text-sky-950">
+                <h2 className="mt-1 text-2xl font-bold text-sky-950">
                   {detailItem.judul}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-sky-700">
+                <p className="mt-1 text-sm leading-6 flex flex-row text-sky-700">
+                  <div className="font-bold mr-1">ISSUE : </div>
                   {detailItem.issue || "-"}
                 </p>
 
-                <div className="mt-2 max-w-xl">
-                  <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-500">
-                    <span>Ref Nota Dinas, Notulen , etc</span>
+                <div className="mt-1 max-w-xl">
+                  <div className="mb-0 flex items-center justify-between gap-2 text-[12px] font-semibold text-slate-500">
+                    <span>Ref Nota Dinas, Notulen, etc</span>
                     {updatingReferenceId === detailItem.id && (
-                      <span className="inline-flex items-center gap-1 text-sky-600">
+                      <span className="inline-flex items-center text-sky-600">
                         <Loader2 size={12} className="animate-spin" />
                         Saving...
                       </span>
@@ -973,15 +975,15 @@ export default function MaintenanceCardList({
                       handleReferenceBlur(detailItem, event.currentTarget)
                     }
                     disabled={updatingReferenceId === detailItem.id}
-                    className="h-9 w-full rounded-lg border border-sky-200 bg-white/80 px-2 py-1 text-xs text-slate-700 outline-none transition-all focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="h-7 w-full border-0 bg-transparent px-0 py-0 text-[12px] leading-6 text-slate-700 outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
                     aria-label={`Edit reference for ${detailItem.judul}`}
                   />
                 </div>
 
                 <div>
-                  <div className="mb-2 flex items-center justify-between text-sm font-semibold text-sky-700">
+                  <div className="mb-1 flex items-center justify-between text-sm font-semibold text-sky-700">
                     <span>Progress</span>
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1">
                       {updatingProgressId === detailItem.id && (
                         <Loader2 size={14} className="animate-spin" />
                       )}
@@ -1019,6 +1021,160 @@ export default function MaintenanceCardList({
                       </p>
                     )}
                   </div>
+                </div>
+
+                <div className="mt-3 max-w-xl">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <ImageIcon size={15} className="text-sky-600" />
+                    <span>Photo Preview</span>
+                  </div>
+
+                  <input
+                    id={`detail-photo-upload-${detailItem.id}`}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(event) => handlePhotoSelect(detailItem, event)}
+                    className="hidden"
+                  />
+
+                  <div className="flex items-stretch gap-2">
+                    <div className="min-w-0 flex-1">
+                      {detailItem.photo && detailItem.photo.length > 0 ? (
+                        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                          {detailItem.photo.slice(0, 6).map((photo, index) => {
+                            const isDeletingThisPhoto =
+                              deletingPhoto?.itemId === detailItem.id &&
+                              deletingPhoto.fileName === photo;
+
+                            return (
+                              <div key={photo} className="group relative">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPreview({ item: detailItem, index })
+                                  }
+                                  className="w-full rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
+                                  aria-label={`Open ${detailItem.judul} photo ${index + 1}`}
+                                >
+                                  <img
+                                    src={pb.files.getURL(detailItem, photo)}
+                                    alt={`${detailItem.judul} photo ${index + 1}`}
+                                    className="h-14 w-full rounded-xl border border-sky-100 object-cover shadow-sm transition-all hover:scale-[1.02]"
+                                  />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setDeletePhotoTarget({
+                                      item: detailItem,
+                                      fileName: photo,
+                                    });
+                                  }}
+                                  disabled={isDeletingThisPhoto}
+                                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-600/90 text-white shadow transition-all hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-70"
+                                  aria-label={`Delete ${detailItem.judul} photo ${index + 1}`}
+                                >
+                                  {isDeletingThisPhoto ? (
+                                    <Loader2
+                                      size={12}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <Trash2 size={12} />
+                                  )}
+                                </button>
+
+                                {index === 5 && detailItem.photo.length > 6 && (
+                                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-slate-900/55 text-xs font-bold text-white">
+                                    +{detailItem.photo.length - 6}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex h-14 items-center justify-center rounded-xl border border-dashed border-sky-200 bg-white/70 text-xs font-medium text-slate-400">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+
+                    <label
+                      htmlFor={`detail-photo-upload-${detailItem.id}`}
+                      aria-disabled={isDetailPhotoBusy}
+                      className={`inline-flex h-14 w-24 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-white/80 px-2 text-center text-[11px] font-semibold text-sky-700 transition-all hover:bg-sky-50 ${
+                        isDetailPhotoBusy
+                          ? "pointer-events-none cursor-not-allowed opacity-60"
+                          : "cursor-pointer"
+                      }`}
+                    >
+                      {compressingId === detailItem.id ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Plus size={13} />
+                      )}
+                      {compressingId === detailItem.id
+                        ? "Compressing..."
+                        : detailItem.photo && detailItem.photo.length > 0
+                          ? "Add Photo"
+                          : "Select Photo"}
+                    </label>
+                  </div>
+
+                  {compressingId === detailItem.id &&
+                    detailPendingPhotos.length === 0 && (
+                      <div className="mt-2 flex items-center gap-2 rounded-xl border border-sky-100 bg-white/70 px-3 py-2 text-xs font-medium text-sky-700">
+                        <Loader2 size={13} className="animate-spin" />
+                        Preparing compressed preview...
+                      </div>
+                    )}
+
+                  {detailPendingPhotos.length > 0 && (
+                    <div className="mt-2 rounded-xl border border-sky-100 bg-white/80 p-2">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-slate-600">
+                          Preview before upload
+                        </span>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => clearPendingPhotos(detailItem.id)}
+                            disabled={isDetailPhotoBusy}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Clear
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUploadPhotos(detailItem)}
+                            disabled={isDetailPhotoBusy}
+                            className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-2 py-1 text-[11px] font-semibold text-white transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Upload size={13} />
+                            {uploadingId === detailItem.id
+                              ? "Uploading..."
+                              : "Upload"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {detailPendingPhotos.map((photo, idx) => (
+                          <img
+                            key={`${photo.previewUrl}-${idx}`}
+                            src={photo.previewUrl}
+                            alt={`Selected ${detailItem.judul} photo ${idx + 1}`}
+                            className="h-14 w-20 shrink-0 rounded-lg border border-sky-100 object-cover"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1200,162 +1356,6 @@ export default function MaintenanceCardList({
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2 font-semibold text-slate-800">
-                    <ImageIcon size={18} className="text-sky-600" />
-                    <span>Photo</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      id={`detail-photo-upload-${detailItem.id}`}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(event) => handlePhotoSelect(detailItem, event)}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor={`detail-photo-upload-${detailItem.id}`}
-                      aria-disabled={isDetailPhotoBusy}
-                      className={`inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition-all hover:bg-sky-100 ${
-                        isDetailPhotoBusy
-                          ? "pointer-events-none cursor-not-allowed opacity-60"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      {compressingId === detailItem.id ? (
-                        <Loader2 size={15} className="animate-spin" />
-                      ) : (
-                        <Plus size={15} />
-                      )}
-                      {compressingId === detailItem.id
-                        ? "Compressing..."
-                        : detailItem.photo && detailItem.photo.length > 0
-                          ? "Add Photo"
-                          : "Select Photo"}
-                    </label>
-                  </div>
-                </div>
-
-                {compressingId === detailItem.id &&
-                  detailPendingPhotos.length === 0 && (
-                    <div className="mb-3 flex items-center gap-2 rounded-2xl border border-sky-100 bg-sky-50/60 px-4 py-3 text-sm font-medium text-sky-700">
-                      <Loader2 size={16} className="animate-spin" />
-                      Preparing compressed preview...
-                    </div>
-                  )}
-
-                {detailPendingPhotos.length > 0 && (
-                  <div className="mb-4 rounded-2xl border border-sky-100 bg-sky-50/40 p-4">
-                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-800">
-                          Preview before upload
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          Images are compressed before being uploaded.
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 self-end sm:self-auto">
-                        <button
-                          type="button"
-                          onClick={() => clearPendingPhotos(detailItem.id)}
-                          disabled={isDetailPhotoBusy}
-                          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          Clear
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleUploadPhotos(detailItem)}
-                          disabled={isDetailPhotoBusy}
-                          className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <Upload size={15} />
-                          {uploadingId === detailItem.id
-                            ? "Uploading..."
-                            : "Upload"}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 overflow-x-auto pb-1">
-                      {detailPendingPhotos.map((photo, idx) => (
-                        <img
-                          key={`${photo.previewUrl}-${idx}`}
-                          src={photo.previewUrl}
-                          alt={`Selected ${detailItem.judul} photo ${idx + 1}`}
-                          className="h-28 w-40 shrink-0 rounded-xl border border-sky-100 object-cover"
-                        />
-                      ))}
-                    </div>
-
-                    {compressingId === detailItem.id && (
-                      <div className="mt-3 flex items-center gap-2 text-xs font-medium text-sky-700">
-                        <Loader2 size={14} className="animate-spin" />
-                        Compressing image...
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {detailItem.photo && detailItem.photo.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {detailItem.photo.map((photo, index) => {
-                      const isDeletingThisPhoto =
-                        deletingPhoto?.itemId === detailItem.id &&
-                        deletingPhoto.fileName === photo;
-
-                      return (
-                        <div key={photo} className="group relative">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setPreview({ item: detailItem, index })
-                            }
-                            className="w-full rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
-                            aria-label={`Open ${detailItem.judul} photo ${index + 1}`}
-                          >
-                            <img
-                              src={pb.files.getURL(detailItem, photo)}
-                              alt={`${detailItem.judul} photo ${index + 1}`}
-                              className="h-40 w-full rounded-2xl border border-slate-200 object-cover transition-all hover:scale-[1.01]"
-                            />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setDeletePhotoTarget({
-                                item: detailItem,
-                                fileName: photo,
-                              });
-                            }}
-                            disabled={isDeletingThisPhoto}
-                            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-600/90 text-white shadow-lg transition-all hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-70"
-                            aria-label={`Delete ${detailItem.judul} photo ${index + 1}`}
-                          >
-                            {isDeletingThisPhoto ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={16} />
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex h-36 items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-sm font-medium text-slate-400">
-                    No Image
-                  </div>
-                )}
               </div>
             </div>
           </div>
