@@ -33,6 +33,8 @@ type ExportRow = {
   waktuPelaksanaan: string;
 };
 
+type ExportMode = "all" | "filtered";
+
 const getImageDataUrl = async (url: string) => {
   const response = await fetch(url);
   if (!response.ok) throw new Error("Failed to fetch image");
@@ -94,6 +96,11 @@ const sortByKnownOrder =
     return left.localeCompare(right);
   };
 
+const normalizeSearchText = (value: unknown) =>
+  String(value ?? "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "");
+
 const ListKerusakanPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [sortOption, setSortOption] = useState("judul");
@@ -131,10 +138,10 @@ const ListKerusakanPage: React.FC = () => {
   }));
 
   const filteredListData = scopedListData.filter((item) => {
-    const keyword = searchQuery.trim().toLowerCase();
+    const keyword = normalizeSearchText(searchQuery);
     if (!keyword) return true;
 
-    return [
+    const searchableText = normalizeSearchText([
       item.judul,
       item.issue,
       item.discipline,
@@ -144,9 +151,9 @@ const ListKerusakanPage: React.FC = () => {
       item.reference,
       item.waktu_pelaksanaan,
     ]
-      .join(" ")
-      .toLowerCase()
-      .includes(keyword);
+      .join(" "));
+
+    return searchableText.includes(keyword);
   });
 
   function recordToListData(record: any): ListData {
@@ -195,8 +202,9 @@ const ListKerusakanPage: React.FC = () => {
     loadTasks();
   }, []);
 
-  const handleExportPdf = async () => {
-    if (listdata.length === 0 || exportingPdf) return;
+  const handleExportPdf = async (mode: ExportMode) => {
+    const exportData = mode === "filtered" ? filteredListData : listdata;
+    if (exportData.length === 0 || exportingPdf) return;
 
     try {
       setExportingPdf(true);
@@ -206,7 +214,7 @@ const ListKerusakanPage: React.FC = () => {
         unit: "mm",
         format: "a4",
       });
-      const groupedData = groupDataByUnitAndDiscipline(listdata);
+      const groupedData = groupDataByUnitAndDiscipline(exportData);
       const pageHeight = doc.internal.pageSize.getHeight();
       const pageWidth = doc.internal.pageSize.getWidth();
       const marginX = 14;
@@ -215,8 +223,34 @@ const ListKerusakanPage: React.FC = () => {
 
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
-      doc.text("Maintenance Data Export", marginX, cursorY);
+      doc.text(
+        `Maintenance Data Export - ${mode === "filtered" ? "Filtered Data" : "All Data"}`,
+        marginX,
+        cursorY,
+      );
       cursorY += 9;
+
+      if (mode === "filtered") {
+        const filterSummary = [
+          searchQuery.trim() ? `Search: ${searchQuery.trim()}` : null,
+          selectedUnit ? `Unit: ${selectedUnit}` : null,
+          selectedDiscipline ? `Discipline: ${selectedDiscipline}` : null,
+          selectedWaktuPelaksanaan
+            ? `Waktu Pelaksanaan: ${selectedWaktuPelaksanaan}`
+            : null,
+        ].filter(Boolean);
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          filterSummary.length > 0
+            ? filterSummary.join(" | ")
+            : "Filter: All visible data",
+          marginX,
+          cursorY,
+        );
+        cursorY += 7;
+      }
 
       const ensurePageSpace = (height = 25) => {
         if (cursorY + height <= pageHeight - 12) return;
@@ -354,9 +388,9 @@ const ListKerusakanPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6 w-full flex flex-col items-start gap-2 justify-center">
+      <div className="flex w-full flex-col items-start justify-center gap-3 p-3 sm:p-6">
         <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-500 to-cyan-500 p-5 text-white shadow-sm xl:col-span-1">
+          <div className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-500 to-cyan-500 p-4 text-white shadow-sm sm:p-5 xl:col-span-1">
             <p className="text-sm font-semibold uppercase tracking-wide text-sky-100">
               {scopedListData.length > 0
                 ? Math.round(
@@ -366,7 +400,7 @@ const ListKerusakanPage: React.FC = () => {
               % Complete
             </p>
             <div className="mt-3 flex items-end gap-2">
-              <span className="text-4xl font-bold leading-none">
+                <span className="text-3xl font-bold leading-none sm:text-4xl">
                 {completedMaintenanceCount}
               </span>
               <span className="pb-1 text-sm font-semibold text-sky-100">
@@ -378,12 +412,12 @@ const ListKerusakanPage: React.FC = () => {
           {disciplineCounts.map((item) => (
             <div
               key={item.discipline}
-              className="rounded-3xl border border-sky-100 bg-white p-5 shadow-sm"
+              className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5"
             >
               <p className="text-sm font-semibold text-slate-500">
                 {item.discipline}
               </p>
-              <p className="mt-3 text-4xl font-bold leading-none text-sky-900">
+              <p className="mt-3 text-3xl font-bold leading-none text-sky-900 sm:text-4xl">
                 {item.count}
               </p>
               <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -393,7 +427,7 @@ const ListKerusakanPage: React.FC = () => {
           ))}
         </div>
 
-        <div className="w-full rounded-3xl border border-sky-100 bg-white p-4 shadow-sm">
+        <div className="w-full rounded-3xl border border-sky-100 bg-white p-3 shadow-sm sm:p-4">
           <label className="mb-2 block text-sm font-semibold text-slate-700">
             Search Data
           </label>
@@ -406,7 +440,7 @@ const ListKerusakanPage: React.FC = () => {
             className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-4 py-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-sky-300"
           />
         </div>
-        <div className="flex w-full flex-wrap items-center gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <select
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}
@@ -416,8 +450,8 @@ const ListKerusakanPage: React.FC = () => {
               border-sky-200
               text-sky-800
                 rounded-sm
-                px-1
-                py-1
+                px-3
+                py-2
                 text-sm
                 font-medium
                 shadow-sm
@@ -439,7 +473,7 @@ const ListKerusakanPage: React.FC = () => {
             onClick={() => setOpenModal(true)}
             className="
       px-3
-      py-1
+      py-2
       rounded-md
       bg-gradient-to-r
       from-sky-500
@@ -454,11 +488,20 @@ const ListKerusakanPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={handleExportPdf}
+            onClick={() => handleExportPdf("all")}
             disabled={exportingPdf || listdata.length === 0}
-            className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {exportingPdf ? "Exporting..." : "Export PDF"}
+            {exportingPdf ? "Exporting..." : "Export All"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleExportPdf("filtered")}
+            disabled={exportingPdf || filteredListData.length === 0}
+            className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 shadow-sm transition-all hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exportingPdf ? "Exporting..." : "Export By Filter"}
           </button>
         </div>
 

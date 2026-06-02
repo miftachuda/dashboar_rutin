@@ -52,20 +52,20 @@ export default function Header() {
     return `${Math.floor(diff / 3600)}h ago`;
   };
   return (
-    <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
+    <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-sm">
+      <div className="max-w-8xl mx-auto flex min-h-14 items-center gap-3 px-3 py-2 sm:h-16 sm:px-6 lg:px-8">
         {/* LEFT: Title */}
-        <div>
-          <h1 className="text-lg font-display font-bold text-foreground leading-tight">
+        <div className="min-w-0">
+          <h1 className="font-display text-sm font-bold leading-tight text-foreground sm:text-lg">
             Dashboard Tracking Kerusakan & Perbaikan Peralatan
           </h1>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="font-mono text-[10px] text-muted-foreground sm:text-xs">
             Beyond Lubrication
           </p>
         </div>
 
         {/* RIGHT: Toggle + last refresh */}
-        <div className="ml-auto flex flex-col items-end gap-1">
+        <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
           {/* Toggle Switch */}
           <button
             onClick={() => setAutoRefresh((prev) => !prev)}
@@ -81,7 +81,7 @@ export default function Header() {
           </button>
 
           {/* Label */}
-          <span className="text-[10px] font-mono text-muted-foreground">
+          <span className="hidden text-[10px] font-mono text-muted-foreground min-[420px]:inline">
             Auto Refresh: {autoRefresh ? "ON" : "OFF"}
           </span>
 

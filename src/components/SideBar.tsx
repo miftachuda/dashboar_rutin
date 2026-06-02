@@ -38,12 +38,12 @@ export default function Sidebar({
           icon: Inbox,
           badge: null,
         },
-        // {
-        //   name: "Material",
-        //   path: "/material",
-        //   icon: Folder,
-        //   badge: null,
-        // },
+        {
+          name: "Consumable material",
+          path: "/material",
+          icon: Folder,
+          badge: null,
+        },
       ],
     },
     // {
@@ -71,12 +71,14 @@ export default function Sidebar({
   return (
     <aside
       className={`
-        ${collapsed ? "w-[90px]" : "w-[260px]"}
+        w-full
+        ${collapsed ? "md:w-[90px]" : "md:w-[260px]"}
         bg-sky-100
         text-sky-950
         sticky
         top-0
-        h-screen
+        h-auto
+        md:h-screen
         shrink-0
         z-30
         transition-all
@@ -93,6 +95,8 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="
+      hidden
+      md:flex
       absolute
       -right-4
       top-6
@@ -117,7 +121,7 @@ export default function Sidebar({
       </div>
 
       {/* Header */}
-      <div className="px-5 pt-6 pb-8 flex items-center gap-3">
+      <div className="flex items-center gap-3 px-4 py-3 md:px-5 md:pb-8 md:pt-6">
         <div
           className="
             w-10
@@ -135,7 +139,7 @@ export default function Sidebar({
         </div>
 
         {!collapsed && (
-          <div>
+          <div className="min-w-0">
             <h1 className="font-bold text-base leading-none text-sky-900">
               Lube Oil Complex II
             </h1>
@@ -144,16 +148,16 @@ export default function Sidebar({
       </div>
 
       {/* Menu */}
-      <div className="flex-1 overflow-y-auto px-3">
+      <div className="flex-1 overflow-x-auto px-3 pb-3 md:overflow-y-auto md:pb-0">
         {menus.map((group) => (
-          <div key={group.section} className="mb-7">
+          <div key={group.section} className="mb-0 md:mb-7">
             {!collapsed && (
               <p className="text-[11px] uppercase text-sky-500 mb-3 px-3 font-semibold tracking-wide">
                 {group.section}
               </p>
             )}
 
-            <div className="space-y-1">
+            <div className="flex gap-2 md:block md:space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const active = location.pathname === item.path;
@@ -162,7 +166,9 @@ export default function Sidebar({
                     key={item.path}
                     onClick={() => navigate(item.path)}
                     className={`
-                      w-full
+                      w-auto
+                      min-w-fit
+                      md:w-full
                       flex
                       items-center
                       ${collapsed ? "justify-center" : "justify-between"}
@@ -183,7 +189,9 @@ export default function Sidebar({
                       <Icon size={18} />
 
                       {!collapsed && (
-                        <span className="text-sm font-medium">{item.name}</span>
+                        <span className="text-sm font-medium leading-tight">
+                          {item.name}
+                        </span>
                       )}
                     </div>
 

@@ -150,7 +150,7 @@ const ChemicalPage: React.FC = () => {
   const [filteredChemicalUsage, setFilteredChemicalUsage] = useState<
     ChemicalUsage[]
   >([]);
-  const [filter, setFilter] = useState<FilterRange>("bulan");
+  const [filter, setFilter] = useState<FilterRange>("tahun");
   const [start, setStart] = useState(40);
   const [end, setEnd] = useState(50);
   const [tank, setTank] = useState<Tank>("022V-103");
@@ -317,28 +317,28 @@ const ChemicalPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex w-full flex-col gap-4 p-6">
-        <div className="rounded-3xl border border-sky-100 bg-white p-5 shadow-sm">
+      <div className="flex w-full flex-col gap-4 p-3 sm:p-6">
+        <div className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-sky-950">Chemical Usage</h1>
+              <h1 className="text-xl font-bold text-sky-950 sm:text-2xl">Chemical Usage</h1>
               <p className="text-sm text-sky-700">
                 Track chemical consumption, conversion, and make-up records.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
               <Button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="bg-gradient-to-r from-sky-500 to-cyan-500 text-white hover:from-sky-600 hover:to-cyan-600"
+                className="w-full bg-gradient-to-r from-sky-500 to-cyan-500 text-white hover:from-sky-600 hover:to-cyan-600 sm:w-auto"
               >
                 <Plus className="h-4 w-4" /> Add Chemical Usage
               </Button>
               <select
                 value={filter}
                 onChange={(event) => setFilter(event.target.value as FilterRange)}
-                className="h-10 rounded-xl border border-sky-200 bg-sky-50/60 px-3 text-sm font-medium text-sky-900 outline-none focus:ring-2 focus:ring-sky-300"
+                className="h-10 w-full rounded-xl border border-sky-200 bg-sky-50/60 px-3 text-sm font-medium text-sky-900 outline-none focus:ring-2 focus:ring-sky-300 sm:w-auto"
               >
                 {FILTER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -350,7 +350,7 @@ const ChemicalPage: React.FC = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setCalc(true)}
-                className="border-sky-200 text-sky-700 hover:bg-sky-50"
+                className="w-full border-sky-200 text-sky-700 hover:bg-sky-50 sm:w-auto"
               >
                 <Calculator className="h-4 w-4" /> Propane Calculator
               </Button>
@@ -367,25 +367,25 @@ const ChemicalPage: React.FC = () => {
               title: "Furfural Used",
               value: sumAmounts(furfural),
               icon: <div className="font-extrabold">FUR</div>,
-              gradient: "linear-gradient(135deg,#0ea5e9,#06b6d4)",
+              gradient: "linear-gradient(135deg,#f59e0b,#f97316)",
             },
             {
               title: "MEK Used",
               value: sumAmounts(mek),
               icon: <div className="font-extrabold">MEK</div>,
-              gradient: "linear-gradient(135deg,#0284c7,#38bdf8)",
+              gradient: "linear-gradient(135deg,#8b5cf6,#a855f7)",
             },
             {
               title: "Toluene Used",
               value: sumAmounts(toluene),
               icon: <div className="font-extrabold">TOL</div>,
-              gradient: "linear-gradient(135deg,#06b6d4,#22d3ee)",
+              gradient: "linear-gradient(135deg,#10b981,#22c55e)",
             },
             {
               title: "Propane Used",
               value: sumAmounts(propane),
               icon: <div className="font-extrabold">PROP</div>,
-              gradient: "linear-gradient(135deg,#0369a1,#0ea5e9)",
+              gradient: "linear-gradient(135deg,#ef4444,#f97316)",
             },
           ]}
           onChemicalChange={setSelectedChemical}
@@ -394,7 +394,7 @@ const ChemicalPage: React.FC = () => {
         <CardList data={selectedChemicalData} />
 
         <Dialog open={calc} onOpenChange={setCalc}>
-          <DialogContent className="border-sky-100 bg-white sm:max-w-md">
+          <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border-sky-100 bg-white sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-sky-950">Propane Calculator</DialogTitle>
             </DialogHeader>
@@ -414,7 +414,7 @@ const ChemicalPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Level Awal (%)
@@ -460,7 +460,7 @@ const ChemicalPage: React.FC = () => {
         </Dialog>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="border-sky-100 bg-white sm:max-w-2xl">
+          <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border-sky-100 bg-white sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-sky-950">Add Chemical Usage</DialogTitle>
             </DialogHeader>

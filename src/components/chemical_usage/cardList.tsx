@@ -27,7 +27,7 @@ const CardList = ({ data }: { data: any[] }) => {
               }`}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-bold text-sky-950">Make Up</p>
 
@@ -41,14 +41,14 @@ const CardList = ({ data }: { data: any[] }) => {
                   <p className="text-sm font-semibold text-sky-700">
                     {item.chemical_name}
                   </p>
-                  <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                  <p className="mt-2 break-words rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
                     {item.description || "-"}
                   </p>
                 </div>
 
-                <div className="text-left sm:text-right">
+                <div className="shrink-0 text-left sm:text-right">
                   <p className="text-sm font-semibold text-slate-500">Amount</p>
-                  <p className="text-2xl font-bold text-sky-700">
+                  <p className="break-words text-xl font-bold text-sky-700 sm:text-2xl">
                     {Number(item.amount).toFixed(2)} {item.unit}
                   </p>
                   <p className="mt-2 rounded-xl bg-sky-50 px-3 py-2 text-xs font-medium text-slate-500">

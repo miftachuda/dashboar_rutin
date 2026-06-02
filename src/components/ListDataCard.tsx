@@ -3,6 +3,7 @@ import imageCompression from "browser-image-compression";
 import { format, formatDistanceToNow } from "date-fns";
 import { pb } from "@/lib/pocketbase";
 import { ListData } from "@/types/listdata";
+import { WaktuPelaksanaan } from "@/types/enum";
 import {
   ChevronLeft,
   ChevronRight,
@@ -187,11 +188,18 @@ export default function MaintenanceCardList({
     item: ListData;
     fileName: string;
   } | null>(null);
+  const [waktuPelaksanaanTarget, setWaktuPelaksanaanTarget] = useState<{
+    item: ListData;
+    nextValue: string;
+  } | null>(null);
   const [compressingId, setCompressingId] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [updatingReferenceId, setUpdatingReferenceId] = useState<string | null>(
     null,
   );
+  const [updatingWaktuPelaksanaanId, setUpdatingWaktuPelaksanaanId] = useState<
+    string | null
+  >(null);
   const [pendingPhotos, setPendingPhotos] = useState<
     Record<string, PendingPhoto[]>
   >({});
@@ -519,6 +527,52 @@ export default function MaintenanceCardList({
       alert("Failed to update reference");
     } finally {
       setUpdatingReferenceId(null);
+    }
+  };
+
+  const handleWaktuPelaksanaanChange = (
+    item: ListData,
+    nextWaktuPelaksanaan: string,
+  ) => {
+    if (
+      nextWaktuPelaksanaan === item.waktu_pelaksanaan ||
+      updatingWaktuPelaksanaanId === item.id
+    ) {
+      return;
+    }
+
+    setWaktuPelaksanaanTarget({ item, nextValue: nextWaktuPelaksanaan });
+  };
+
+  const handleConfirmWaktuPelaksanaanChange = async () => {
+    if (!waktuPelaksanaanTarget) return;
+
+    const { item, nextValue } = waktuPelaksanaanTarget;
+
+    try {
+      setUpdatingWaktuPelaksanaanId(item.id);
+      const updatedItem = await pb
+        .collection("db_maintenance")
+        .update(item.id, {
+          waktu_pelaksanaan: nextValue,
+        });
+
+      setDetailItem((current) =>
+        current?.id === item.id
+          ? {
+              ...current,
+              waktu_pelaksanaan: updatedItem.waktu_pelaksanaan ?? nextValue,
+              updated: updatedItem.updated ?? current.updated,
+            }
+          : current,
+      );
+      onDataChanged?.();
+      setWaktuPelaksanaanTarget(null);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update waktu pelaksanaan");
+    } finally {
+      setUpdatingWaktuPelaksanaanId(null);
     }
   };
 
@@ -904,33 +958,56 @@ export default function MaintenanceCardList({
 
       {detailItem && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-2 py-3 backdrop-blur-sm sm:px-4 sm:py-6"
           onClick={() => setDetailItem(null)}
           role="dialog"
           aria-modal="true"
           aria-label={`${detailItem.judul} detail`}
         >
           <div
-            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-sky-100 bg-white shadow-2xl"
+            className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-sky-100 bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-3xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-cyan-50 px-6 py-5">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(detailItem)}
-                disabled={deletingId === detailItem.id}
-                className="absolute right-16 top-4 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 shadow-sm transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label={`Delete ${detailItem.judul}`}
-              >
-                {deletingId === detailItem.id ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Trash2 size={16} />
+            <div className="sticky top-0 z-10 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-cyan-50 px-4 py-4 sm:px-6 sm:py-5">
+              <div className="mb-3 flex flex-wrap items-center gap-2 pr-10 sm:absolute sm:right-16 sm:top-4 sm:mb-0 sm:pr-0">
+                <select
+                  value={detailItem.waktu_pelaksanaan}
+                  onChange={(event) =>
+                    handleWaktuPelaksanaanChange(
+                      detailItem,
+                      event.currentTarget.value,
+                    )
+                  }
+                  disabled={updatingWaktuPelaksanaanId === detailItem.id}
+                  className="h-9 min-w-0 flex-1 rounded-full border border-sky-200 bg-white/90 px-3 text-xs font-semibold text-slate-700 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70 sm:w-40 sm:flex-none"
+                  aria-label={`Edit waktu pelaksanaan for ${detailItem.judul}`}
+                >
+                  {WaktuPelaksanaan.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+                {updatingWaktuPelaksanaanId === detailItem.id && (
+                  <Loader2 size={16} className="animate-spin text-sky-600" />
                 )}
-                <span className="hidden sm:inline">
-                  {deletingId === detailItem.id ? "Deleting..." : "Delete"}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(detailItem)}
+                  disabled={deletingId === detailItem.id}
+                  className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 shadow-sm transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label={`Delete ${detailItem.judul}`}
+                >
+                  {deletingId === detailItem.id ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  <span className="hidden sm:inline">
+                    {deletingId === detailItem.id ? "Deleting..." : "Delete"}
+                  </span>
+                </button>
+              </div>
 
               <button
                 type="button"
@@ -941,7 +1018,7 @@ export default function MaintenanceCardList({
                 <X size={20} />
               </button>
 
-              <div className="pr-28 sm:pr-40">
+              <div className="sm:pr-40">
                 <PillCards
                   discipline={detailItem.discipline}
                   type={detailItem.type}
@@ -949,15 +1026,15 @@ export default function MaintenanceCardList({
                   unit={detailItem.unit}
                 />
 
-                <h2 className="mt-1 text-2xl font-bold text-sky-950">
+                <h2 className="mt-1 text-xl font-bold text-sky-950 sm:text-2xl">
                   {detailItem.judul}
                 </h2>
-                <div className="mt-1 text-sm leading-6 flex flex-row text-sky-700">
-                  <div className="font-bold mr-1">ISSUE : </div>
+                <div className="mt-1 flex flex-col text-sm leading-6 text-sky-700 sm:flex-row">
+                  <div className="mr-1 font-bold">ISSUE : </div>
                   {detailItem.issue || "-"}
                 </div>
 
-                <div className="mt-1 flex max-w-xl items-center gap-3 text-[12px]">
+                <div className="mt-1 flex max-w-xl flex-col gap-1 text-[12px] sm:flex-row sm:items-center sm:gap-3">
                   <div className="flex shrink-0 items-center gap-2 font-semibold text-slate-500">
                     <span>Ref Nota Dinas, Notulen, etc</span>
                     {updatingReferenceId === detailItem.id && (
@@ -1356,6 +1433,78 @@ export default function MaintenanceCardList({
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {waktuPelaksanaanTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm waktu pelaksanaan change"
+        >
+          <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
+                <Loader2
+                  size={24}
+                  className={
+                    updatingWaktuPelaksanaanId ===
+                    waktuPelaksanaanTarget.item.id
+                      ? "animate-spin"
+                      : ""
+                  }
+                />
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Change waktu pelaksanaan?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  This will change from{" "}
+                  <span className="font-semibold text-slate-900">
+                    {waktuPelaksanaanTarget.item.waktu_pelaksanaan}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-slate-900">
+                    {waktuPelaksanaanTarget.nextValue}
+                  </span>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setWaktuPelaksanaanTarget(null)}
+                disabled={
+                  updatingWaktuPelaksanaanId === waktuPelaksanaanTarget.item.id
+                }
+                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmWaktuPelaksanaanChange}
+                disabled={
+                  updatingWaktuPelaksanaanId === waktuPelaksanaanTarget.item.id
+                }
+                className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updatingWaktuPelaksanaanId ===
+                  waktuPelaksanaanTarget.item.id && (
+                  <Loader2 size={16} className="animate-spin" />
+                )}
+                {updatingWaktuPelaksanaanId === waktuPelaksanaanTarget.item.id
+                  ? "Saving..."
+                  : "Change"}
+              </button>
             </div>
           </div>
         </div>

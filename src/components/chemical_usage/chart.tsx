@@ -87,16 +87,16 @@ const DashboardPerformance: React.FC<DashboardPerformanceProps> = ({
     }),
   );
   return (
-    <div className="rounded-3xl border border-sky-100 bg-white p-6 text-slate-900 shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-sky-950">{title}</h2>
-        <div className="flex items-center space-x-2 relative z-50">
-          <div className="relative">
+    <div className="rounded-3xl border border-sky-100 bg-white p-4 text-slate-900 shadow-sm sm:p-6">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-bold text-sky-950 sm:text-xl">{title}</h2>
+        <div className="relative z-50 flex items-center space-x-2">
+          <div className="relative w-full sm:w-auto">
             <Select
               value={selectedChemical}
               onValueChange={handleChemicalChange}
             >
-              <SelectTrigger className="h-10 w-44 rounded-xl border-sky-200 bg-sky-50/60 text-sky-900 focus:ring-sky-300">
+              <SelectTrigger className="h-10 w-full rounded-xl border-sky-200 bg-sky-50/60 text-sky-900 focus:ring-sky-300 sm:w-44">
                 <SelectValue placeholder="Select Chemical" />
               </SelectTrigger>
               <SelectContent
@@ -118,7 +118,7 @@ const DashboardPerformance: React.FC<DashboardPerformanceProps> = ({
         </div>
       </div>
 
-      <div className="h-64 mb-6">
+      <div className="mb-6 h-56 sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={selectedChemicalDataWithTime}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
@@ -164,11 +164,11 @@ const DashboardPerformance: React.FC<DashboardPerformanceProps> = ({
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-4 md:gap-4">
         {metrics.map((metric, i) => (
           <div
             key={i}
-            className="flex flex-col items-center justify-center rounded-2xl border border-sky-100 bg-sky-50/40 p-4"
+             className="flex flex-col items-center justify-center rounded-2xl border border-sky-100 bg-sky-50/40 p-3 text-center sm:p-4"
           >
             <div
               className="w-12 h-12 flex items-center justify-center rounded-full mb-2"
@@ -179,7 +179,7 @@ const DashboardPerformance: React.FC<DashboardPerformanceProps> = ({
             >
               <div className="text-white">{metric.icon}</div>
             </div>
-            <div className="text-lg font-bold text-sky-950">
+            <div className="text-base font-bold text-sky-950 sm:text-lg">
               <>
                 <CountUp value={metric.value} decimals={2} /> m³
               </>
