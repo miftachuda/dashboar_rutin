@@ -9,12 +9,15 @@ import {
   startOfWeek,
   startOfYear,
 } from "date-fns";
-import { Calculator, Plus } from "lucide-react";
+import { Calculator, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/MainLayout";
 import DashboardPerformance from "@/components/chemical_usage/chart";
 import CardList from "@/components/chemical_usage/cardList";
-import { FILTER_OPTIONS, FilterRange } from "@/components/chemical_usage/option";
+import {
+  FILTER_OPTIONS,
+  FilterRange,
+} from "@/components/chemical_usage/option";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -64,8 +67,8 @@ const chemicalData = [
   { name: "Furfural", units: ["% Vessel", "m³", "kg"] },
   { name: "MEK", units: ["% Vessel", "m³"] },
   { name: "Toluene", units: ["% Vessel", "m³"] },
-  { name: "Sobi", units: ["kg", "Sack"] },
-  { name: "Antifoam", units: ["Liter", "kg"] },
+  // { name: "Sobi", units: ["kg", "Sack"] },
+  // { name: "Antifoam", units: ["Liter", "kg"] },
   { name: "Propane", units: ["m³", "% Vessel"] },
 ];
 
@@ -146,6 +149,8 @@ const ChemicalPage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [calc, setCalc] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ChemicalUsage | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [chemicalUsage, setChemicalUsage] = useState<ChemicalUsage[]>([]);
   const [filteredChemicalUsage, setFilteredChemicalUsage] = useState<
     ChemicalUsage[]
@@ -182,9 +187,11 @@ const ChemicalPage: React.FC = () => {
         .collection("chemical_usage")
         .getFullList<ChemicalUsage>({
           sort: "time",
+          filter: "isDeleted != true",
         });
-      setChemicalUsage(records);
-      applyFilter(records, filter);
+      const activeRecords = records.filter((item) => !item.isDeleted);
+      setChemicalUsage(activeRecords);
+      applyFilter(activeRecords, filter);
     } catch (error) {
       console.error("Error fetching chemical usage:", error);
     }
@@ -217,7 +224,11 @@ const ChemicalPage: React.FC = () => {
   const furfural = (grouped.Furfural || [])
     .map((item) => {
       if (item.unit === "% Vessel") {
-        return { ...item, amount: Number(item.amount) * fpersentonmcubic, unit: "m³" };
+        return {
+          ...item,
+          amount: Number(item.amount) * fpersentonmcubic,
+          unit: "m³",
+        };
       }
       if (item.unit === "kg") {
         return {
@@ -232,7 +243,11 @@ const ChemicalPage: React.FC = () => {
   const mek = (grouped.MEK || [])
     .map((item) => {
       if (item.unit === "% Vessel") {
-        return { ...item, amount: Number(item.amount) * mtpersentonmcubic, unit: "m³" };
+        return {
+          ...item,
+          amount: Number(item.amount) * mtpersentonmcubic,
+          unit: "m³",
+        };
       }
       if (item.unit === "kg") {
         return {
@@ -247,7 +262,11 @@ const ChemicalPage: React.FC = () => {
   const toluene = (grouped.Toluene || [])
     .map((item) => {
       if (item.unit === "% Vessel") {
-        return { ...item, amount: Number(item.amount) * mtpersentonmcubic, unit: "m³" };
+        return {
+          ...item,
+          amount: Number(item.amount) * mtpersentonmcubic,
+          unit: "m³",
+        };
       }
       if (item.unit === "kg") {
         return {
@@ -261,10 +280,17 @@ const ChemicalPage: React.FC = () => {
     .filter(Boolean);
   const propane = grouped.Propane || [];
   const allChemicalUsage = [furfural, mek, toluene, propane];
-  const chemicals = { Furfural: furfural, MEK: mek, Toluene: toluene, Propane: propane };
+  const chemicals = {
+    Furfural: furfural,
+    MEK: mek,
+    Toluene: toluene,
+    Propane: propane,
+  };
 
   const handleChemicalChange = (chemicalName: string) => {
-    const selected = chemicalData.find((chemical) => chemical.name === chemicalName);
+    const selected = chemicalData.find(
+      (chemical) => chemical.name === chemicalName,
+    );
     const units = selected ? selected.units : [];
     setAvailableUnits(units);
     setForm((current) => ({
@@ -288,6 +314,7 @@ const ChemicalPage: React.FC = () => {
         unit: form.unit,
         time: Math.floor(new Date(form.time).getTime() / 1000),
         description: form.description,
+        isDeleted: false,
       });
       await fetchChemicalUsage();
       setOpen(false);
@@ -312,6 +339,31 @@ const ChemicalPage: React.FC = () => {
     }
   };
 
+  const handleDeleteChemicalUsage = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      setDeletingId(deleteTarget.id);
+      await pb.collection("chemical_usage").update(deleteTarget.id, {
+        isDeleted: true,
+      });
+
+      setChemicalUsage((current) =>
+        current.filter((item) => item.id !== deleteTarget.id),
+      );
+      setFilteredChemicalUsage((current) =>
+        current.filter((item) => item.id !== deleteTarget.id),
+      );
+      setDeleteTarget(null);
+      toast.success("Chemical usage deleted");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete chemical usage");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const selectedChemicalData =
     chemicals[selectedChemical as keyof typeof chemicals] ?? [];
 
@@ -321,7 +373,9 @@ const ChemicalPage: React.FC = () => {
         <div className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-xl font-bold text-sky-950 sm:text-2xl">Chemical Usage</h1>
+              <h1 className="text-xl font-bold text-sky-950 sm:text-2xl">
+                Chemical Usage
+              </h1>
               <p className="text-sm text-sky-700">
                 Track chemical consumption, conversion, and make-up records.
               </p>
@@ -337,7 +391,9 @@ const ChemicalPage: React.FC = () => {
               </Button>
               <select
                 value={filter}
-                onChange={(event) => setFilter(event.target.value as FilterRange)}
+                onChange={(event) =>
+                  setFilter(event.target.value as FilterRange)
+                }
                 className="h-10 w-full rounded-xl border border-sky-200 bg-sky-50/60 px-3 text-sm font-medium text-sky-900 outline-none focus:ring-2 focus:ring-sky-300 sm:w-auto"
               >
                 {FILTER_OPTIONS.map((option) => (
@@ -391,12 +447,18 @@ const ChemicalPage: React.FC = () => {
           onChemicalChange={setSelectedChemical}
         />
 
-        <CardList data={selectedChemicalData} />
+        <CardList
+          data={selectedChemicalData}
+          deletingId={deletingId}
+          onDeleteClick={setDeleteTarget}
+        />
 
         <Dialog open={calc} onOpenChange={setCalc}>
           <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border-sky-100 bg-white sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-sky-950">Propane Calculator</DialogTitle>
+              <DialogTitle className="text-sky-950">
+                Propane Calculator
+              </DialogTitle>
             </DialogHeader>
             <div className="rounded-3xl border border-sky-100 bg-sky-50/40 p-5">
               <div className="space-y-4">
@@ -444,8 +506,12 @@ const ChemicalPage: React.FC = () => {
                 </div>
 
                 <div className="rounded-2xl border border-sky-100 bg-white p-4 text-center">
-                  <p className="text-sm font-semibold text-slate-500">Selisih Volume</p>
-                  <p className={`text-2xl font-bold ${result !== null ? "text-sky-700" : "text-red-500"}`}>
+                  <p className="text-sm font-semibold text-slate-500">
+                    Selisih Volume
+                  </p>
+                  <p
+                    className={`text-2xl font-bold ${result !== null ? "text-sky-700" : "text-red-500"}`}
+                  >
                     {result !== null ? `${result.toFixed(2)} m³` : "No Result"}
                   </p>
                 </div>
@@ -462,15 +528,23 @@ const ChemicalPage: React.FC = () => {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border-sky-100 bg-white sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-sky-950">Add Chemical Usage</DialogTitle>
+              <DialogTitle className="text-sky-950">
+                Add Chemical Usage
+              </DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
-                <Label htmlFor="chemicalName" className="text-slate-600 sm:text-right">
+                <Label
+                  htmlFor="chemicalName"
+                  className="text-slate-600 sm:text-right"
+                >
                   Chemical
                 </Label>
-                <Select onValueChange={handleChemicalChange} value={form.chemicalName}>
+                <Select
+                  onValueChange={handleChemicalChange}
+                  value={form.chemicalName}
+                >
                   <SelectTrigger className="sm:col-span-3">
                     <SelectValue placeholder="Select a chemical" />
                   </SelectTrigger>
@@ -485,7 +559,10 @@ const ChemicalPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
-                <Label htmlFor="amount" className="text-slate-600 sm:text-right">
+                <Label
+                  htmlFor="amount"
+                  className="text-slate-600 sm:text-right"
+                >
                   Amount
                 </Label>
                 <Input
@@ -493,7 +570,9 @@ const ChemicalPage: React.FC = () => {
                   type="number"
                   step="0.1"
                   value={form.amount}
-                  onChange={(event) => setForm({ ...form, amount: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, amount: event.target.value })
+                  }
                   className="sm:col-span-3"
                 />
               </div>
@@ -528,13 +607,18 @@ const ChemicalPage: React.FC = () => {
                   id="time"
                   type="datetime-local"
                   value={form.time}
-                  onChange={(event) => setForm({ ...form, time: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, time: event.target.value })
+                  }
                   className="sm:col-span-3"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
-                <Label htmlFor="description" className="text-slate-600 sm:text-right">
+                <Label
+                  htmlFor="description"
+                  className="text-slate-600 sm:text-right"
+                >
                   Description
                 </Label>
                 <Input
@@ -554,6 +638,64 @@ const ChemicalPage: React.FC = () => {
               </Button>
               <Button onClick={handleSave} disabled={loading}>
                 {loading ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={Boolean(deleteTarget)}
+          onOpenChange={(isOpen) => {
+            if (!isOpen && !deletingId) setDeleteTarget(null);
+          }}
+        >
+          <DialogContent className="w-[calc(100vw-2rem)] rounded-3xl border-red-100 bg-white sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-slate-900">
+                Delete this chemical usage?
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex items-start gap-4 rounded-2xl bg-red-50/60 p-4">
+              <div className="rounded-2xl bg-red-100 p-3 text-red-600">
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <p className="text-sm leading-6 text-slate-600">
+                  This will delete the selected chemical usage record from the
+                  list.
+                </p>
+                {deleteTarget && (
+                  <p className="mt-2 text-sm font-semibold text-slate-900">
+                    {deleteTarget.chemical_name} -{" "}
+                    {Number(deleteTarget.amount).toFixed(2)} {deleteTarget.unit}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+                disabled={Boolean(deletingId)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDeleteChemicalUsage}
+                disabled={Boolean(deletingId)}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                {deleteTarget && deletingId === deleteTarget.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                {deleteTarget && deletingId === deleteTarget.id
+                  ? "Deleting..."
+                  : "Delete"}
               </Button>
             </DialogFooter>
           </DialogContent>

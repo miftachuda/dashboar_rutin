@@ -1,7 +1,17 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
+import { Loader2, Trash2 } from "lucide-react";
+import { ChemicalUsage } from "@/types/ChemicalUsage";
 
-const CardList = ({ data }: { data: any[] }) => {
+const CardList = ({
+  data,
+  deletingId,
+  onDeleteClick,
+}: {
+  data: ChemicalUsage[];
+  deletingId?: string | null;
+  onDeleteClick: (item: ChemicalUsage) => void;
+}) => {
   const sortedData = [...(data ?? [])].sort(
     (a, b) => new Date(b.time * 1000).getTime() - new Date(a.time * 1000).getTime(),
   );
@@ -47,6 +57,20 @@ const CardList = ({ data }: { data: any[] }) => {
                 </div>
 
                 <div className="shrink-0 text-left sm:text-right">
+                  <button
+                    type="button"
+                    onClick={() => onDeleteClick(item)}
+                    disabled={deletingId === item.id}
+                    className="mb-3 inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-all hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label={`Delete ${item.chemical_name} usage`}
+                  >
+                    {deletingId === item.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                    {deletingId === item.id ? "Deleting..." : "Delete"}
+                  </button>
                   <p className="text-sm font-semibold text-slate-500">Amount</p>
                   <p className="break-words text-xl font-bold text-sky-700 sm:text-2xl">
                     {Number(item.amount).toFixed(2)} {item.unit}

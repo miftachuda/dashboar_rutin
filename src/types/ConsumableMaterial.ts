@@ -10,9 +10,9 @@ export type ConsumableMaterialSection =
 
 export const consumableMaterialTypeOptions = {
   Pelumas: ["Oil", "Grease", "Additive"],
-  Gasket: ["Sheet", "Spiral Wound", "Ring Joint", "O-Ring"],
-  Hose: ["Hydraulic", "Air", "Steam", "Chemical", "Flexible"],
-  Belt: ["V-Belt", "Timing Belt", "Flat Belt"],
+  Gasket: [],
+  Hose: [],
+  Belt: [],
 } as const satisfies Record<ConsumableMaterialSection, readonly string[]>;
 
 export type ConsumableMaterialTypeMap = typeof consumableMaterialTypeOptions;

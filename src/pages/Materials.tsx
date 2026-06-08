@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { Check, Loader2, Pencil } from "lucide-react";
 import DashboardLayout from "@/components/MainLayout";
 import { pb } from "@/lib/pocketbase";
 import {
@@ -21,6 +22,15 @@ const formatNumber = (value: number | undefined) => {
   }).format(numberValue);
 };
 
+const formatTimeAgo = (value?: string) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return formatDistanceToNow(date, { addSuffix: true });
+};
+
 const MaterialPage = () => {
   const [materials, setMaterials] = useState<ConsumableMaterial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +38,9 @@ const MaterialPage = () => {
   const [activeSection, setActiveSection] =
     useState<ConsumableMaterialSection>(consumableMaterialSections[0]);
   const [activeType, setActiveType] = useState<MaterialTypeFilter>("all");
+  const [editingStockId, setEditingStockId] = useState<string | null>(null);
+  const [stockDraft, setStockDraft] = useState("");
+  const [updatingStockId, setUpdatingStockId] = useState<string | null>(null);
 
   const typeOptions = consumableMaterialTypeOptions[activeSection];
   const sectionMaterials = materials.filter(
@@ -64,6 +77,57 @@ const MaterialPage = () => {
   useEffect(() => {
     fetchMaterials();
   }, []);
+
+  const startStockEdit = (item: ConsumableMaterial) => {
+    setEditingStockId(item.id);
+    setStockDraft(String(item.stock ?? 0));
+  };
+
+  const cancelStockEdit = () => {
+    setEditingStockId(null);
+    setStockDraft("");
+  };
+
+  const handleStockSave = async (item: ConsumableMaterial) => {
+    const nextStock = Number(stockDraft);
+
+    if (!Number.isFinite(nextStock) || nextStock < 0) {
+      alert("Stock must be a valid positive number");
+      return;
+    }
+
+    if (nextStock === Number(item.stock ?? 0)) {
+      cancelStockEdit();
+      return;
+    }
+
+    try {
+      setUpdatingStockId(item.id);
+      const updatedItem = await pb
+        .collection("consumable_material")
+        .update(item.id, {
+          stock: nextStock,
+        });
+
+      setMaterials((current) =>
+        current.map((material) =>
+          material.id === item.id
+            ? {
+                ...material,
+                stock: updatedItem.stock ?? nextStock,
+                updated: updatedItem.updated ?? material.updated,
+              }
+            : material,
+        ),
+      );
+      cancelStockEdit();
+    } catch (updateError) {
+      console.error("Error updating consumable material stock:", updateError);
+      alert("Failed to update stock");
+    } finally {
+      setUpdatingStockId(null);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -140,33 +204,35 @@ const MaterialPage = () => {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveType("all")}
-                className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
-                  activeType === "all"
-                    ? "border-sky-500 bg-sky-600 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                All Type
-              </button>
-              {typeOptions.map((type) => (
+            {typeOptions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
                 <button
-                  key={type}
                   type="button"
-                  onClick={() => setActiveType(type)}
+                  onClick={() => setActiveType("all")}
                   className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
-                    activeType === type
+                    activeType === "all"
                       ? "border-sky-500 bg-sky-600 text-white"
-                      : "border-sky-100 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  {type}
+                  All Type
                 </button>
-              ))}
-            </div>
+                {typeOptions.map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setActiveType(type)}
+                    className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                      activeType === type
+                        ? "border-sky-500 bg-sky-600 text-white"
+                        : "border-sky-100 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -223,12 +289,72 @@ const MaterialPage = () => {
                       </div>
 
                       <div className="shrink-0 text-left sm:text-right">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Stock
-                        </p>
-                        <p className="text-2xl font-bold text-sky-800">
-                          {formatNumber(item.stock)} {item.unit}
-                        </p>
+                        {editingStockId === item.id ? (
+                          <div className="rounded-2xl border border-sky-200 bg-white/80 p-3 text-left shadow-sm">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-600">
+                              Editing stock
+                            </p>
+                            <div className="mt-2 flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={stockDraft}
+                                onChange={(event) =>
+                                  setStockDraft(event.target.value)
+                                }
+                                disabled={updatingStockId === item.id}
+                                className="h-10 w-28 rounded-xl border border-sky-200 bg-white px-3 text-sm font-bold text-sky-900 outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70"
+                                aria-label={`Edit stock for ${item.material_name}`}
+                              />
+                              <span className="text-sm font-semibold text-slate-500">
+                                {item.unit}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleStockSave(item)}
+                                disabled={updatingStockId === item.id}
+                                className="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {updatingStockId === item.id ? (
+                                  <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                  <Check size={13} />
+                                )}
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelStockEdit}
+                                disabled={updatingStockId === item.id}
+                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              Stock
+                            </p>
+                            <div className="flex items-center gap-2 sm:justify-end">
+                              <p className="text-2xl font-bold text-sky-800">
+                                {formatNumber(item.stock)} {item.unit}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => startStockEdit(item)}
+                                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-sky-600 shadow-sm transition-all hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                aria-label={`Edit stock for ${item.material_name}`}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -256,9 +382,7 @@ const MaterialPage = () => {
                           Last Updated
                         </p>
                         <p className="mt-1 text-sm font-bold text-slate-700">
-                          {item.updated
-                            ? new Date(item.updated).toLocaleDateString("id-ID")
-                            : "-"}
+                          {formatTimeAgo(item.updated)}
                         </p>
                       </div>
                     </div>

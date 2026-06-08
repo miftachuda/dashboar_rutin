@@ -57,7 +57,7 @@ export default function Header() {
         {/* LEFT: Title */}
         <div className="min-w-0">
           <h1 className="font-display text-sm font-bold leading-tight text-foreground sm:text-lg">
-            Dashboard Tracking Kerusakan & Perbaikan Peralatan
+            Dashboard Tracking Lube Oil Complex II
           </h1>
           <p className="font-mono text-[10px] text-muted-foreground sm:text-xs">
             Beyond Lubrication

@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Loader2,
   Trash2,
+  Pencil,
+  Check,
   Plus,
   Upload,
   Image as ImageIcon,
@@ -200,6 +202,12 @@ export default function MaintenanceCardList({
   const [updatingWaktuPelaksanaanId, setUpdatingWaktuPelaksanaanId] = useState<
     string | null
   >(null);
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [updatingTitleId, setUpdatingTitleId] = useState<string | null>(null);
+  const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
+  const [issueDraft, setIssueDraft] = useState("");
+  const [updatingIssueId, setUpdatingIssueId] = useState<string | null>(null);
   const [pendingPhotos, setPendingPhotos] = useState<
     Record<string, PendingPhoto[]>
   >({});
@@ -527,6 +535,101 @@ export default function MaintenanceCardList({
       alert("Failed to update reference");
     } finally {
       setUpdatingReferenceId(null);
+    }
+  };
+
+  const startTitleEdit = (item: ListData) => {
+    setEditingTitleId(item.id);
+    setTitleDraft(item.judul || "");
+  };
+
+  const cancelTitleEdit = () => {
+    setEditingTitleId(null);
+    setTitleDraft("");
+  };
+
+  const handleTitleSave = async (item: ListData) => {
+    const nextTitle = titleDraft.trim();
+
+    if (!nextTitle) {
+      alert("Title cannot be empty");
+      return;
+    }
+
+    if (nextTitle === item.judul) {
+      cancelTitleEdit();
+      return;
+    }
+
+    try {
+      setUpdatingTitleId(item.id);
+      const updatedItem = await pb
+        .collection("db_maintenance")
+        .update(item.id, {
+          judul: nextTitle,
+        });
+
+      setDetailItem((current) =>
+        current?.id === item.id
+          ? {
+              ...current,
+              judul: updatedItem.judul ?? nextTitle,
+              updated: updatedItem.updated ?? current.updated,
+            }
+          : current,
+      );
+      cancelTitleEdit();
+      onDataChanged?.();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update title");
+    } finally {
+      setUpdatingTitleId(null);
+    }
+  };
+
+  const startIssueEdit = (item: ListData) => {
+    setEditingIssueId(item.id);
+    setIssueDraft(item.issue || "");
+  };
+
+  const cancelIssueEdit = () => {
+    setEditingIssueId(null);
+    setIssueDraft("");
+  };
+
+  const handleIssueSave = async (item: ListData) => {
+    const nextIssue = issueDraft.trim();
+
+    if (nextIssue === item.issue) {
+      cancelIssueEdit();
+      return;
+    }
+
+    try {
+      setUpdatingIssueId(item.id);
+      const updatedItem = await pb
+        .collection("db_maintenance")
+        .update(item.id, {
+          issue: nextIssue,
+        });
+
+      setDetailItem((current) =>
+        current?.id === item.id
+          ? {
+              ...current,
+              issue: updatedItem.issue ?? nextIssue,
+              updated: updatedItem.updated ?? current.updated,
+            }
+          : current,
+      );
+      cancelIssueEdit();
+      onDataChanged?.();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update issue");
+    } finally {
+      setUpdatingIssueId(null);
     }
   };
 
@@ -1026,13 +1129,118 @@ export default function MaintenanceCardList({
                   unit={detailItem.unit}
                 />
 
-                <h2 className="mt-1 text-xl font-bold text-sky-950 sm:text-2xl">
-                  {detailItem.judul}
-                </h2>
-                <div className="mt-1 flex flex-col text-sm leading-6 text-sky-700 sm:flex-row">
-                  <div className="mr-1 font-bold">ISSUE : </div>
-                  {detailItem.issue || "-"}
-                </div>
+                {editingTitleId === detailItem.id ? (
+                  <div className="mt-2 max-w-2xl space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
+                      Editing title
+                    </p>
+                    <input
+                      type="text"
+                      value={titleDraft}
+                      onChange={(event) => setTitleDraft(event.target.value)}
+                      disabled={updatingTitleId === detailItem.id}
+                      className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3 text-xl font-bold text-sky-950 outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70 sm:text-2xl"
+                      aria-label={`Edit title for ${detailItem.judul}`}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTitleSave(detailItem)}
+                        disabled={updatingTitleId === detailItem.id}
+                        className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {updatingTitleId === detailItem.id ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Check size={14} />
+                        )}
+                        {updatingTitleId === detailItem.id
+                          ? "Saving..."
+                          : "Save Title"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelTitleEdit}
+                        disabled={updatingTitleId === detailItem.id}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-start gap-2">
+                    <h2 className="text-xl font-bold text-sky-950 sm:text-2xl">
+                      {detailItem.judul}
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => startTitleEdit(detailItem)}
+                      className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-sky-600 shadow-sm transition-all hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      aria-label={`Edit title for ${detailItem.judul}`}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  </div>
+                )}
+
+                {editingIssueId === detailItem.id ? (
+                  <div className="mt-3 max-w-2xl space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
+                      Editing issue
+                    </p>
+                    <textarea
+                      value={issueDraft}
+                      onChange={(event) => setIssueDraft(event.target.value)}
+                      disabled={updatingIssueId === detailItem.id}
+                      rows={3}
+                      className="w-full resize-none rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm leading-6 text-sky-700 outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70"
+                      aria-label={`Edit issue for ${detailItem.judul}`}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleIssueSave(detailItem)}
+                        disabled={updatingIssueId === detailItem.id}
+                        className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {updatingIssueId === detailItem.id ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Check size={14} />
+                        )}
+                        {updatingIssueId === detailItem.id
+                          ? "Saving..."
+                          : "Save Issue"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelIssueEdit}
+                        disabled={updatingIssueId === detailItem.id}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex flex-col gap-1 text-sm leading-6 text-sky-700 sm:flex-row sm:items-start">
+                    <div className="mr-1 font-bold">ISSUE : </div>
+                    <div className="flex min-w-0 flex-1 items-start gap-2">
+                      <span className="min-w-0 break-words">
+                        {detailItem.issue || "-"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => startIssueEdit(detailItem)}
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/80 text-sky-600 shadow-sm transition-all hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                        aria-label={`Edit issue for ${detailItem.judul}`}
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-1 flex max-w-xl flex-col gap-1 text-[12px] sm:flex-row sm:items-center sm:gap-3">
                   <div className="flex shrink-0 items-center gap-2 font-semibold text-slate-500">
@@ -1055,7 +1263,6 @@ export default function MaintenanceCardList({
                     aria-label={`Edit reference for ${detailItem.judul}`}
                   />
                 </div>
-
                 <div>
                   <div className="mb-1 flex items-center justify-between text-sm font-semibold text-sky-700">
                     <span>Progress</span>
