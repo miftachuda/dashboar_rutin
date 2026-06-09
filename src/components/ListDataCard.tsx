@@ -36,7 +36,7 @@ const waitForNextPaint = () =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
 
-const getWaktuPelaksanaanRibbonClass = (value: string) => {
+export const getWaktuPelaksanaanRibbonClass = (value: string) => {
   switch (value.trim().toLowerCase()) {
     case "rutin":
       return "from-green-700 via-green-500 to-green-700";
@@ -835,138 +835,95 @@ export default function MaintenanceCardList({
               }}
               role="button"
               tabIndex={0}
-              className="
-            bg-white
-            rounded-3xl
-            border border-sky-100
-            shadow-sm
-            hover:shadow-md
-            transition-all
-            overflow-hidden relative w-full
-            cursor-pointer
-            focus:outline-none
-            focus:ring-2
-            focus:ring-sky-300
-            focus:ring-offset-2
-          "
+              className="relative w-full cursor-pointer overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2"
             >
-              <div
-                className={`
-      absolute
-      top-7
-      right-[-39px]
-      rotate-45
-      bg-gradient-to-r
-      ${ribbonColorClass}
-      text-white
-      font-bold
-      text-sm
-      tracking-wider
-      shadow-lg
-      w-44
-      px-8
-      py-2
-      uppercase
-      text-center
-      whitespace-nowrap
-    `}
-              >
-                {item.waktu_pelaksanaan}
-              </div>
-
-              <div
-                className="
-              px-4
-              py-3
-              bg-gradient-to-r
-              from-sky-50
-              to-cyan-50
-              border-b
-              border-sky-100
-            "
-              >
-                <div className="flex flex-col items-start justify-between gap-4">
-                  <PillCards
-                    discipline={item.discipline}
-                    type={item.type}
-                    tag={item.tag_name}
-                    unit={item.unit}
-                  />
-                  <div className="flex items-start gap-3 pr-24">
+              <div className="bg-gradient-to-r from-sky-50 to-cyan-50 px-3 py-2">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     {item.photo?.[0] ? (
                       <img
                         src={pb.files.getURL(item, item.photo[0])}
                         alt={`${item.judul} cover`}
-                        className="h-16 w-20 shrink-0 rounded-xl border border-sky-100 object-cover shadow-sm"
+                        className="h-12 w-16 shrink-0 rounded-xl border border-sky-100 object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-sky-200 bg-white/60 text-sky-300">
-                        <ImageIcon size={22} />
+                      <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-sky-200 bg-white/60 text-sky-300">
+                        <ImageIcon size={18} />
                       </div>
                     )}
 
-                    <div className="min-w-0">
-                      <h2 className="truncate text-xl font-bold text-sky-900">
-                        {item.judul}
-                      </h2>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <PillCards
+                          discipline={item.discipline}
+                          type={item.type}
+                          tag={item.tag_name}
+                          unit={item.unit}
+                        />
+                        <span
+                          className={`rounded-full bg-gradient-to-r ${ribbonColorClass} px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm`}
+                        >
+                          {item.waktu_pelaksanaan}
+                        </span>
+                      </div>
 
-                      <div className="mt-1 line-clamp-2 flex flex-row text-sm text-sky-700">
-                        <div className="font-bold mr-1">ISSUE : </div>
-                        {item.issue}
+                      <div className="mt-1 flex min-w-0 items-baseline gap-2">
+                        <div className="flex min-w-0 items-baseline gap-2">
+                          <h2 className="min-w-0 shrink truncate text-base font-bold text-sky-900">
+                            {item.judul}
+                          </h2>
+                          <span className="shrink-0 text-xs font-semibold text-sky-500">
+                            -
+                          </span>
+                          <p className="min-w-0 flex-1 truncate text-xs italic text-sky-700">
+                            <span className="font-semibold not-italic">
+                              ISSUE :
+                            </span>{" "}
+                            {item.issue || "-"}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="mt-3 max-w-md">
-                  <div className="mb-1 flex items-center justify-between text-xs font-semibold text-sky-700">
-                    <span>Progress</span>
-                    <span>{progress}%</span>
+
+                  <div className="flex w-full shrink-0 flex-col gap-1 md:w-56 md:items-end">
+                    <div className="flex w-full items-center gap-2 md:justify-end">
+                      <div className="min-w-0 flex-1 md:w-36 md:flex-none">
+                        <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-sky-700">
+                          <span>Progress</span>
+                          <span>{progress}%</span>
+                        </div>
+
+                        <div className="h-1.5 overflow-hidden rounded-full bg-sky-100">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(item)}
+                        disabled={deletingId === item.id}
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label={`Delete ${item.judul}`}
+                      >
+                        {deletingId === item.id ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={15} />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="text-right text-[10px] font-medium leading-4 text-slate-400">
+                      Created: {formatTimeAgo(item.created)} | Updated:{" "}
+                      {formatTimeAgo(item.updated)}
+                    </div>
                   </div>
-
-                  <div className="h-2 overflow-hidden rounded-full bg-sky-100">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
                 </div>
-              </div>
 
-              {/* BODY */}
-              <div className="px-6 py-0">
-                {/* FOOTER */}
-                <div
-                  className="
-                my-3
-                pt-4
-                border-t
-                border-slate-100
-                flex
-                flex-col
-                gap-3
-                sm:flex-row
-                sm:justify-between
-                sm:items-center
-                text-xs
-                text-slate-500
-              "
-                >
-                  <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                    <span>Created: {formatTimeAgo(item.created)}</span>
-
-                    <span>Updated: {formatTimeAgo(item.updated)}</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(item)}
-                    disabled={deletingId === item.id}
-                    className="inline-flex items-center justify-center gap-2 self-end rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Trash2 size={15} />
-                    {deletingId === item.id ? "Deleting..." : "Delete"}
-                  </button>
-                </div>
               </div>
             </div>
           );
@@ -1062,7 +1019,6 @@ export default function MaintenanceCardList({
       {detailItem && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-2 py-3 backdrop-blur-sm sm:px-4 sm:py-6"
-          onClick={() => setDetailItem(null)}
           role="dialog"
           aria-modal="true"
           aria-label={`${detailItem.judul} detail`}
@@ -1073,27 +1029,6 @@ export default function MaintenanceCardList({
           >
             <div className="sticky top-0 z-10 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-cyan-50 px-4 py-4 sm:px-6 sm:py-5">
               <div className="mb-3 flex flex-wrap items-center gap-2 pr-10 sm:absolute sm:right-16 sm:top-4 sm:mb-0 sm:pr-0">
-                <select
-                  value={detailItem.waktu_pelaksanaan}
-                  onChange={(event) =>
-                    handleWaktuPelaksanaanChange(
-                      detailItem,
-                      event.currentTarget.value,
-                    )
-                  }
-                  disabled={updatingWaktuPelaksanaanId === detailItem.id}
-                  className="h-9 min-w-0 flex-1 rounded-full border border-sky-200 bg-white/90 px-3 text-xs font-semibold text-slate-700 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70 sm:w-40 sm:flex-none"
-                  aria-label={`Edit waktu pelaksanaan for ${detailItem.judul}`}
-                >
-                  {WaktuPelaksanaan.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-                {updatingWaktuPelaksanaanId === detailItem.id && (
-                  <Loader2 size={16} className="animate-spin text-sky-600" />
-                )}
                 <button
                   type="button"
                   onClick={() => setDeleteTarget(detailItem)}
@@ -1121,7 +1056,7 @@ export default function MaintenanceCardList({
                 <X size={20} />
               </button>
 
-              <div className="sm:pr-40">
+              <div className="sm:pr-24">
                 <PillCards
                   discipline={detailItem.discipline}
                   type={detailItem.type}
@@ -1134,14 +1069,40 @@ export default function MaintenanceCardList({
                     <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
                       Editing title
                     </p>
-                    <input
-                      type="text"
-                      value={titleDraft}
-                      onChange={(event) => setTitleDraft(event.target.value)}
-                      disabled={updatingTitleId === detailItem.id}
-                      className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3 text-xl font-bold text-sky-950 outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70 sm:text-2xl"
-                      aria-label={`Edit title for ${detailItem.judul}`}
-                    />
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        type="text"
+                        value={titleDraft}
+                        onChange={(event) => setTitleDraft(event.target.value)}
+                        disabled={updatingTitleId === detailItem.id}
+                        className="min-w-0 flex-1 rounded-2xl border border-sky-200 bg-white px-4 py-3 text-xl font-bold text-sky-950 outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70 sm:text-2xl"
+                        aria-label={`Edit title for ${detailItem.judul}`}
+                      />
+                      <select
+                        value={detailItem.waktu_pelaksanaan}
+                        onChange={(event) =>
+                          handleWaktuPelaksanaanChange(
+                            detailItem,
+                            event.currentTarget.value,
+                          )
+                        }
+                        disabled={updatingWaktuPelaksanaanId === detailItem.id}
+                        className="h-9 rounded-full border border-sky-200 bg-white/90 px-3 text-xs font-semibold text-slate-700 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70"
+                        aria-label={`Edit waktu pelaksanaan for ${detailItem.judul}`}
+                      >
+                        {WaktuPelaksanaan.map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                      {updatingWaktuPelaksanaanId === detailItem.id && (
+                        <Loader2
+                          size={16}
+                          className="animate-spin text-sky-600"
+                        />
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
@@ -1169,7 +1130,7 @@ export default function MaintenanceCardList({
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-1 flex items-start gap-2">
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     <h2 className="text-xl font-bold text-sky-950 sm:text-2xl">
                       {detailItem.judul}
                     </h2>
@@ -1181,6 +1142,27 @@ export default function MaintenanceCardList({
                     >
                       <Pencil size={15} />
                     </button>
+                    <select
+                      value={detailItem.waktu_pelaksanaan}
+                      onChange={(event) =>
+                        handleWaktuPelaksanaanChange(
+                          detailItem,
+                          event.currentTarget.value,
+                        )
+                      }
+                      disabled={updatingWaktuPelaksanaanId === detailItem.id}
+                      className="h-8 rounded-full border border-sky-200 bg-white/90 px-3 text-xs font-semibold text-slate-700 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70"
+                      aria-label={`Edit waktu pelaksanaan for ${detailItem.judul}`}
+                    >
+                      {WaktuPelaksanaan.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    {updatingWaktuPelaksanaanId === detailItem.id && (
+                      <Loader2 size={16} className="animate-spin text-sky-600" />
+                    )}
                   </div>
                 )}
 

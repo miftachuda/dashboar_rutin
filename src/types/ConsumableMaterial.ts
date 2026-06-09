@@ -1,5 +1,6 @@
 export const consumableMaterialSections = [
   "Pelumas",
+  "Chemical",
   "Gasket",
   "Hose",
   "Belt",
@@ -10,6 +11,7 @@ export type ConsumableMaterialSection =
 
 export const consumableMaterialTypeOptions = {
   Pelumas: ["Oil", "Grease", "Additive"],
+  Chemical: [],
   Gasket: [],
   Hose: [],
   Belt: [],

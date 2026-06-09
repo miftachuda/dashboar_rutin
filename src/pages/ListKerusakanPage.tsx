@@ -4,10 +4,12 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { pb } from "@/lib/pocketbase";
 import DashboardLayout from "@/components/MainLayout";
-import ListDataCard from "@/components/ListDataCard";
+import ListDataCard, {
+  getWaktuPelaksanaanRibbonClass,
+} from "@/components/ListDataCard";
 import { ListData } from "@/types/listdata";
 import InputPopUp from "@/components/InputPopUp";
-import { getValueColorPalette } from "@/components/phill";
+import { getUnitColorPalette, getValueColorPalette } from "@/components/phill";
 import { WaktuPelaksanaan } from "@/types/enum";
 
 const disciplineKpiLabels = [
@@ -103,7 +105,7 @@ const normalizeSearchText = (value: unknown) =>
 
 const ListKerusakanPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [sortOption, setSortOption] = useState("judul");
+  const [sortOption, setSortOption] = useState("unit");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedDiscipline, setSelectedDiscipline] = useState("");
@@ -137,24 +139,43 @@ const ListKerusakanPage: React.FC = () => {
     ).length,
   }));
 
-  const filteredListData = scopedListData.filter((item) => {
-    const keyword = normalizeSearchText(searchQuery);
-    if (!keyword) return true;
+  const filteredListData = scopedListData
+    .filter((item) => {
+      const keyword = normalizeSearchText(searchQuery);
+      if (!keyword) return true;
 
-    const searchableText = normalizeSearchText([
-      item.judul,
-      item.issue,
-      item.discipline,
-      item.type,
-      item.unit,
-      item.tag_name,
-      item.reference,
-      item.waktu_pelaksanaan,
-    ]
-      .join(" "));
+      const searchableText = normalizeSearchText([
+        item.judul,
+        item.issue,
+        item.discipline,
+        item.type,
+        item.unit,
+        item.tag_name,
+        item.reference,
+        item.waktu_pelaksanaan,
+      ].join(" "));
 
-    return searchableText.includes(keyword);
-  });
+      return searchableText.includes(keyword);
+    })
+    .sort((left, right) => {
+      if (sortOption === "unit") {
+        return sortByKnownOrder(unitFilterOptions)(left.unit, right.unit);
+      }
+
+      if (sortOption === "-unit") {
+        return sortByKnownOrder(unitFilterOptions)(right.unit, left.unit);
+      }
+
+      if (sortOption === "-updated") {
+        return new Date(right.updated).getTime() - new Date(left.updated).getTime();
+      }
+
+      if (sortOption === "updated") {
+        return new Date(left.updated).getTime() - new Date(right.updated).getTime();
+      }
+
+      return 0;
+    });
 
   function recordToListData(record: any): ListData {
     return {
@@ -181,7 +202,7 @@ const ListKerusakanPage: React.FC = () => {
   async function loadTasks() {
     try {
       const ListData = await pb.collection("db_maintenance").getFullList({
-        sort: sortOption,
+        sort: "unit",
         filter: "isDeleted != true",
       });
 
@@ -195,9 +216,6 @@ const ListKerusakanPage: React.FC = () => {
       setLoading(false);
     }
   }
-  useEffect(() => {
-    loadTasks();
-  }, [sortOption]);
   useEffect(() => {
     loadTasks();
   }, []);
@@ -464,10 +482,10 @@ const ListKerusakanPage: React.FC = () => {
                 duration-200
               "
           >
-            <option value="judul">Ascending</option>
-            <option value="-judul">Descending</option>
-            <option value="-updatedCustom">Latest Updated</option>
-            <option value="updatedCustom">Oldest Updated</option>
+            <option value="unit">Unit Ascending</option>
+            <option value="-unit">Unit Descending</option>
+            <option value="-updated">Latest Updated</option>
+            <option value="updated">Oldest Updated</option>
           </select>
           <button
             onClick={() => setOpenModal(true)}
@@ -523,7 +541,7 @@ const ListKerusakanPage: React.FC = () => {
             </button>
 
             {unitFilterOptions.map((unit) => {
-              const color = getValueColorPalette(unit);
+              const color = getUnitColorPalette(unit);
               const active = selectedUnit === unit;
 
               return (
@@ -599,7 +617,7 @@ const ListKerusakanPage: React.FC = () => {
             </button>
 
             {waktuPelaksanaanFilterOptions.map((waktuPelaksanaan) => {
-              const color = getValueColorPalette(waktuPelaksanaan);
+              const gradient = getWaktuPelaksanaanRibbonClass(waktuPelaksanaan);
               const active = selectedWaktuPelaksanaan === waktuPelaksanaan;
 
               return (
@@ -611,8 +629,8 @@ const ListKerusakanPage: React.FC = () => {
                   }
                   className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
                     active
-                      ? "border-sky-500 bg-sky-600 text-white"
-                      : `${color.border} ${color.background} ${color.text} hover:shadow-md`
+                      ? `border-transparent bg-gradient-to-r ${gradient} text-white`
+                      : `border-transparent bg-gradient-to-r ${gradient} text-white opacity-80 hover:opacity-100 hover:shadow-md`
                   }`}
                 >
                   {waktuPelaksanaan}
