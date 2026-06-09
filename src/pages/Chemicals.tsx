@@ -673,7 +673,6 @@ const ChemicalPage: React.FC = () => {
                 )}
               </div>
             </div>
-
             <DialogFooter>
               <Button
                 variant="outline"

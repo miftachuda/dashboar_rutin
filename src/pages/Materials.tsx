@@ -15,8 +15,15 @@ import {
 } from "@/types/ConsumableMaterial";
 
 type StockMode = "add" | "opname";
+type ConsumptionRatePeriod = "day" | "week" | "month" | "year";
 
 const CONSUMPTION_RATE_DAYS = 30;
+const consumptionRatePeriods: ConsumptionRatePeriod[] = [
+  "day",
+  "week",
+  "month",
+  "year",
+];
 
 interface ConsumableMaterialStockLog {
   id: string;
@@ -88,6 +95,26 @@ const parseStockInput = (value: string) => {
     : null;
 };
 
+const getConsumptionRatePeriod = (
+  item: ConsumableMaterial,
+): ConsumptionRatePeriod => {
+  const candidate = String(
+    item.consumption_period || item.consumption_unit || "day",
+  ).toLowerCase();
+
+  return consumptionRatePeriods.includes(candidate as ConsumptionRatePeriod)
+    ? (candidate as ConsumptionRatePeriod)
+    : "day";
+};
+
+const getConsumptionRateMultiplier = (period: ConsumptionRatePeriod) => {
+  if (period === "week") return 7;
+  if (period === "month") return 30;
+  if (period === "year") return 365;
+
+  return 1;
+};
+
 const MaterialPage = () => {
   const [materials, setMaterials] = useState<ConsumableMaterial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +128,9 @@ const MaterialPage = () => {
   const [stockAddDraft, setStockAddDraft] = useState("");
   const [stockOpnameDraft, setStockOpnameDraft] = useState("");
   const [stockNotes, setStockNotes] = useState("");
+  const [editingMinimumStock, setEditingMinimumStock] = useState(false);
+  const [minimumStockDraft, setMinimumStockDraft] = useState("");
+  const [savingMinimumStock, setSavingMinimumStock] = useState(false);
   const [savingStockTransaction, setSavingStockTransaction] = useState(false);
   const [stockLogs, setStockLogs] = useState<ConsumableMaterialStockLog[]>([]);
   const [loadingStockLogs, setLoadingStockLogs] = useState(false);
@@ -278,12 +308,14 @@ const MaterialPage = () => {
     setStockAddDraft("");
     setStockOpnameDraft("");
     setStockNotes("");
+    setEditingMinimumStock(false);
+    setMinimumStockDraft(String(item.minimum_stock ?? 0));
     setStockLogs([]);
     void fetchStockLogs(item.id);
   };
 
   const closeStockPopup = () => {
-    if (savingStockTransaction || deletingStockLogId) return;
+    if (savingStockTransaction || savingMinimumStock || deletingStockLogId) return;
 
     setSelectedMaterialId(null);
     setDeleteStockLogTarget(null);
@@ -291,8 +323,64 @@ const MaterialPage = () => {
     setStockAddDraft("");
     setStockOpnameDraft("");
     setStockNotes("");
+    setEditingMinimumStock(false);
+    setMinimumStockDraft("");
     setStockLogs([]);
     setStockLogsError("");
+  };
+
+  const startMinimumStockEdit = () => {
+    if (!selectedMaterial) return;
+
+    setMinimumStockDraft(String(selectedMaterial.minimum_stock ?? 0));
+    setEditingMinimumStock(true);
+  };
+
+  const cancelMinimumStockEdit = () => {
+    if (savingMinimumStock) return;
+
+    setEditingMinimumStock(false);
+    setMinimumStockDraft("");
+  };
+
+  const handleMinimumStockSave = async () => {
+    if (!selectedMaterial) return;
+
+    const nextMinimumStock = parseStockInput(minimumStockDraft);
+
+    if (nextMinimumStock === null || nextMinimumStock < 0) {
+      alert("Minimum stock must be a valid positive number");
+      return;
+    }
+
+    try {
+      setSavingMinimumStock(true);
+      const updatedItem = await pb
+        .collection("consumable_material")
+        .update(selectedMaterial.id, {
+          minimum_stock: nextMinimumStock,
+        });
+
+      setMaterials((current) =>
+        current.map((material) =>
+          material.id === selectedMaterial.id
+            ? {
+                ...material,
+                minimum_stock:
+                  updatedItem.minimum_stock ?? nextMinimumStock,
+                updated: updatedItem.updated ?? material.updated,
+              }
+            : material,
+        ),
+      );
+      setEditingMinimumStock(false);
+      setMinimumStockDraft("");
+    } catch (updateError) {
+      console.error("Error updating minimum stock:", updateError);
+      alert("Failed to update minimum stock");
+    } finally {
+      setSavingMinimumStock(false);
+    }
   };
 
   const handleStockTransactionSave = async () => {
@@ -534,10 +622,16 @@ const MaterialPage = () => {
                 const isLowStock =
                   minimumStock > 0 && Number(item.stock ?? 0) <= minimumStock;
                 const dailyConsumption = materialConsumptionRates[item.id];
-                const consumptionText =
+                const consumptionPeriod = getConsumptionRatePeriod(item);
+                const periodConsumption =
                   dailyConsumption === undefined
+                    ? undefined
+                    : dailyConsumption *
+                      getConsumptionRateMultiplier(consumptionPeriod);
+                const consumptionText =
+                  periodConsumption === undefined
                     ? "-"
-                    : `${formatNumber(dailyConsumption)} ${item.unit} / day`;
+                    : `${formatNumber(periodConsumption)} ${item.unit} / ${consumptionPeriod}`;
                 const latestStockLog = latestStockLogs[item.id];
                 const isStockIncrement = latestStockLog?.action === "add_stock";
                 const stockMovementValue = latestStockLog
@@ -636,7 +730,7 @@ const MaterialPage = () => {
                         </div>
                         <div className="rounded-xl bg-white/70 px-3 py-2 lg:min-w-[145px]">
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                            Consumption/day
+                            Consumption/{consumptionPeriod}
                           </p>
                           <p className="mt-0.5 text-sm font-bold text-slate-700">
                             {consumptionText}
@@ -673,18 +767,23 @@ const MaterialPage = () => {
                   {selectedMaterial.type ? ` / ${selectedMaterial.type}` : ""}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={closeStockPopup}
-                disabled={savingStockTransaction}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-all hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label="Close stock transaction popup"
-              >
-                x
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-[10px] italic text-slate-400">
+                  updated {formatTimeAgo(selectedMaterial.updated)}
+                </span>
+                <button
+                  type="button"
+                  onClick={closeStockPopup}
+                  disabled={savingStockTransaction}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-all hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Close stock transaction popup"
+                >
+                  x
+                </button>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="rounded-2xl bg-sky-50 px-4 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-500">
                   Current Stock
@@ -697,19 +796,64 @@ const MaterialPage = () => {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                   Minimum Stock
                 </p>
-                <p className="mt-1 text-lg font-bold text-slate-800">
-                  {Number(selectedMaterial.minimum_stock ?? 0) > 0
-                    ? `${formatNumber(selectedMaterial.minimum_stock)} ${selectedMaterial.unit}`
-                    : "-"}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  Updated
-                </p>
-                <p className="mt-1 text-lg font-bold text-slate-800">
-                  {formatTimeAgo(selectedMaterial.updated)}
-                </p>
+                {editingMinimumStock ? (
+                  <div className="mt-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        step="1"
+                        value={minimumStockDraft}
+                        onChange={(event) =>
+                          setMinimumStockDraft(event.target.value)
+                        }
+                        disabled={savingMinimumStock}
+                        className="h-9 w-24 rounded-xl border border-sky-200 bg-white px-3 text-sm font-bold text-sky-900 outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70"
+                        aria-label="Edit minimum stock"
+                      />
+                      <span className="text-sm font-semibold text-slate-500">
+                        {selectedMaterial.unit}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleMinimumStockSave}
+                        disabled={savingMinimumStock}
+                        className="inline-flex h-8 items-center gap-1 rounded-xl bg-sky-600 px-3 text-xs font-semibold text-white transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {savingMinimumStock && (
+                          <Loader2 size={13} className="animate-spin" />
+                        )}
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelMinimumStockEdit}
+                        disabled={savingMinimumStock}
+                        className="h-8 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-lg font-bold text-slate-800">
+                      {Number(selectedMaterial.minimum_stock ?? 0) > 0
+                        ? `${formatNumber(selectedMaterial.minimum_stock)} ${selectedMaterial.unit}`
+                        : "-"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={startMinimumStockEdit}
+                      disabled={savingStockTransaction || savingMinimumStock}
+                      className="rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
