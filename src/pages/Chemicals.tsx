@@ -41,6 +41,24 @@ import { ChemicalUsage } from "@/types/ChemicalUsage";
 
 type Tank = "022V-103" | "024V-112";
 
+type VesselLevelResponse = {
+  TagName: string;
+  TimeStamp?: string[];
+  Value?: number[];
+  Confidence?: number[];
+};
+
+type VesselLevelConfig = {
+  tagName: string;
+  label: string;
+  subtitle: string;
+  chemical: "FUR" | "MEK" | "TOL" | "PROP";
+  visual: "vertical" | "horizontal";
+  gradient: string;
+  tonPerPercent?: number;
+  tank?: Tank;
+};
+
 type VolumePoint = {
   level: number;
   "022V-103": number;
@@ -70,6 +88,79 @@ const chemicalData = [
   // { name: "Sobi", units: ["kg", "Sack"] },
   // { name: "Antifoam", units: ["Liter", "kg"] },
   { name: "Propane", units: ["m³", "% Vessel"] },
+];
+
+const vesselLevelEndpoint = "https://phd.miftachuda.my.id/GetData";
+
+const vesselLevelRequestBody = [
+  {
+    SampleInterval: 900000,
+    GetEnum: false,
+    ResampleMethod: "Around",
+    MinimumConfidence: 0,
+    MaxRows: 100,
+    TimeFormat: 6,
+    ReductionData: "snapshot",
+    TagName: [
+      "023LI_019.PV",
+      "024LI_025.PV",
+      "024LI_022.PV",
+      "024LI_052.PV",
+      "022LI_021.PV",
+    ],
+    StartTime: "NOW",
+    EndTime: "NOW",
+    OutputTimeFormat: 6,
+    EventSequence: 0,
+  },
+];
+
+const vesselLevelConfigs: VesselLevelConfig[] = [
+  {
+    tagName: "023LI_019.PV",
+    label: "FUR",
+    subtitle: "Furfural",
+    chemical: "FUR",
+    visual: "vertical",
+    gradient: "from-amber-400 to-orange-500",
+    tonPerPercent: 2.11,
+  },
+  {
+    tagName: "024LI_026.PV",
+    label: "MEK",
+    subtitle: "MEK",
+    chemical: "MEK",
+    visual: "vertical",
+    gradient: "from-violet-400 to-fuchsia-500",
+    tonPerPercent: 0.8279,
+  },
+  {
+    tagName: "024LI_052.PV",
+    label: "TOL",
+    subtitle: "Toluene",
+    chemical: "TOL",
+    visual: "vertical",
+    gradient: "from-emerald-400 to-green-500",
+    tonPerPercent: 0.8279,
+  },
+  {
+    tagName: "022LI_021.PV",
+    label: "PROP",
+    subtitle: "022V-103",
+    chemical: "PROP",
+    visual: "horizontal",
+    gradient: "from-red-400 to-orange-500",
+    tank: "022V-103",
+  },
+  {
+    tagName: "024LI_022.PV",
+    label: "PROP",
+    subtitle: "024V-112",
+    chemical: "PROP",
+    visual: "horizontal",
+    gradient: "from-red-400 to-orange-500",
+    tank: "024V-112",
+  },
 ];
 
 const monthFilterMap: Record<string, number> = {
@@ -124,6 +215,19 @@ function sumAmounts(arr: Array<ChemicalUsage | undefined>) {
   }, 0);
 }
 
+function formatChemicalNumber(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return "-";
+
+  return new Intl.NumberFormat("id-ID", {
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+}
+
 function getFilterRange(filter: FilterRange) {
   const now = new Date();
 
@@ -155,6 +259,11 @@ const ChemicalPage: React.FC = () => {
   const [filteredChemicalUsage, setFilteredChemicalUsage] = useState<
     ChemicalUsage[]
   >([]);
+  const [vesselLevels, setVesselLevels] = useState<
+    Record<string, VesselLevelResponse>
+  >({});
+  const [vesselLoading, setVesselLoading] = useState(false);
+  const [vesselError, setVesselError] = useState("");
   const [filter, setFilter] = useState<FilterRange>("tahun");
   const [start, setStart] = useState(40);
   const [end, setEnd] = useState(50);
@@ -197,8 +306,43 @@ const ChemicalPage: React.FC = () => {
     }
   };
 
+  const fetchVesselLevels = async () => {
+    try {
+      setVesselLoading(true);
+      setVesselError("");
+      const response = await fetch(vesselLevelEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(vesselLevelRequestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Vessel level request failed: ${response.status}`);
+      }
+
+      const data = (await response.json()) as VesselLevelResponse[];
+      const nextLevels = data.reduce<Record<string, VesselLevelResponse>>(
+        (levels, item) => ({
+          ...levels,
+          [item.TagName]: item,
+        }),
+        {},
+      );
+
+      setVesselLevels(nextLevels);
+    } catch (error) {
+      console.error("Error fetching vessel levels:", error);
+      setVesselError("Failed to load vessel level data.");
+    } finally {
+      setVesselLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchChemicalUsage();
+    fetchVesselLevels();
   }, []);
 
   useEffect(() => {
@@ -446,6 +590,135 @@ const ChemicalPage: React.FC = () => {
           ]}
           onChemicalChange={setSelectedChemical}
         />
+
+        <div className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-sky-950">
+                Vessel Level Overview
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Live vessel level from PHD with inventory conversion.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={fetchVesselLevels}
+              disabled={vesselLoading}
+              className="border-sky-200 text-sky-700 hover:bg-sky-50"
+            >
+              {vesselLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Refresh Level
+            </Button>
+          </div>
+
+          {vesselError ? (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+              {vesselError}
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {vesselLevelConfigs.map((config) => {
+                const record = vesselLevels[config.tagName];
+                const rawLevel = Number(record?.Value?.[0] ?? 0);
+                const confidence = Number(record?.Confidence?.[0] ?? 0);
+                const hasSignal = Boolean(record) && confidence > 0;
+                const levelPercent = clampPercent(rawLevel);
+                const volumeM3 =
+                  hasSignal && config.tank
+                    ? getVendorVolume(levelPercent, config.tank)
+                    : null;
+                const convertedValue = hasSignal
+                  ? config.tonPerPercent
+                    ? levelPercent * config.tonPerPercent
+                    : volumeM3
+                  : null;
+                const convertedUnit = config.tonPerPercent ? "TON" : "m³";
+                const fillClass = hasSignal
+                  ? `bg-gradient-to-t ${config.gradient}`
+                  : "bg-slate-200";
+
+                return (
+                  <div
+                    key={config.tagName}
+                    className="rounded-3xl border border-sky-100 bg-sky-50/40 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-base font-extrabold text-sky-950">
+                          {config.label}
+                        </p>
+                        <p className="text-xs font-semibold text-slate-500">
+                          {config.subtitle}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          hasSignal
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        {hasSignal ? "LIVE" : "NO SIGNAL"}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex min-h-[150px] items-center justify-center">
+                      {config.visual === "vertical" ? (
+                        <div className="relative h-36 w-20 overflow-hidden rounded-b-3xl rounded-t-xl border-2 border-sky-100 bg-white shadow-inner">
+                          <div
+                            className={`absolute bottom-0 left-0 w-full transition-all ${fillClass}`}
+                            style={{
+                              height: `${hasSignal ? levelPercent : 0}%`,
+                            }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center px-2 text-center">
+                            <span className="rounded-full bg-white/80 px-2 py-1 text-sm font-extrabold text-sky-950 shadow-sm">
+                              {hasSignal
+                                ? `${formatChemicalNumber(levelPercent)}%`
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative h-20 w-full overflow-hidden rounded-full border-2 border-sky-100 bg-white shadow-inner">
+                          <div
+                            className={`absolute bottom-0 left-0 w-full transition-all ${fillClass}`}
+                            style={{
+                              height: `${hasSignal ? levelPercent : 0}%`,
+                            }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center px-2 text-center">
+                            <span className="rounded-full bg-white/80 px-2 py-1 text-sm font-extrabold text-sky-950 shadow-sm">
+                              {hasSignal
+                                ? `${formatChemicalNumber(levelPercent)}%`
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 rounded-2xl bg-white/80 px-3 py-2 text-center">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                        Inventory
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold text-sky-950">
+                        {hasSignal && convertedValue != null
+                          ? `${formatChemicalNumber(convertedValue)} ${convertedUnit}`
+                          : "-"}
+                      </p>
+                      <p className="mt-1 text-[10px] italic text-slate-400">
+                        {record?.TimeStamp?.[0] || "No timestamp"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <CardList
           data={selectedChemicalData}
