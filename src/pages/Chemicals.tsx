@@ -103,8 +103,8 @@ const vesselLevelRequestBody = [
     ReductionData: "snapshot",
     TagName: [
       "023LI_019.PV",
-      "024LI_025.PV",
-      "024LI_022.PV",
+      "024LI_026.PV",
+      "024LI_023.PV",
       "024LI_052.PV",
       "022LI_021.PV",
     ],
@@ -126,7 +126,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
     tonPerPercent: 2.11,
   },
   {
-    tagName: "024LI_026.PV",
+    tagName: "024LI_023.PV", //024LI_022.PV
     label: "MEK",
     subtitle: "MEK",
     chemical: "MEK",
@@ -135,7 +135,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
     tonPerPercent: 0.8279,
   },
   {
-    tagName: "024LI_052.PV",
+    tagName: "024LI_026.PV", //024LI_025.PV
     label: "TOL",
     subtitle: "Toluene",
     chemical: "TOL",
@@ -153,7 +153,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
     tank: "022V-103",
   },
   {
-    tagName: "024LI_022.PV",
+    tagName: "024LI_052.PV",
     label: "PROP",
     subtitle: "024V-112",
     chemical: "PROP",
