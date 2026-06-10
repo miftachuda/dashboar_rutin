@@ -32,10 +32,12 @@ type ExportRow = {
   tag: string;
   judul: string;
   issue: string;
+  progress: string;
   waktuPelaksanaan: string;
 };
 
 type ExportMode = "all" | "filtered";
+type ProgressStatusFilter = "all" | "inProgress" | "done";
 
 const getImageDataUrl = async (url: string) => {
   const response = await fetch(url);
@@ -103,6 +105,19 @@ const normalizeSearchText = (value: unknown) =>
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, "");
 
+const filterButtonBaseClass =
+  "rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all";
+
+const getFilterButtonClass = (active: boolean, activeClass: string) =>
+  `${filterButtonBaseClass} ${
+    active
+      ? `!border-transparent !text-white shadow-lg ${activeClass}`
+      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+  }`;
+
+const getClampedProgress = (progress: number | undefined) =>
+  Math.min(Math.max(progress ?? 0, 0), 100);
+
 const ListKerusakanPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [sortOption, setSortOption] = useState("unit");
@@ -110,11 +125,13 @@ const ListKerusakanPage: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedDiscipline, setSelectedDiscipline] = useState("");
   const [selectedWaktuPelaksanaan, setSelectedWaktuPelaksanaan] = useState("");
+  const [selectedProgressStatus, setSelectedProgressStatus] =
+    useState<ProgressStatusFilter>("all");
   const [listdata, setlistData] = useState<ListData[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportingPdf, setExportingPdf] = useState(false);
 
-  const scopedListData = listdata.filter((item) => {
+  const progressStatusBaseData = listdata.filter((item) => {
     const matchesUnit = selectedUnit ? item.unit === selectedUnit : true;
     const matchesDiscipline = selectedDiscipline
       ? item.discipline === selectedDiscipline
@@ -126,9 +143,27 @@ const ListKerusakanPage: React.FC = () => {
     return matchesUnit && matchesDiscipline && matchesWaktuPelaksanaan;
   });
 
+  const progressStatusCounts = {
+    all: progressStatusBaseData.length,
+    inProgress: progressStatusBaseData.filter(
+      (item) => getClampedProgress(item.progress) < 100,
+    ).length,
+    done: progressStatusBaseData.filter(
+      (item) => getClampedProgress(item.progress) === 100,
+    ).length,
+  };
+
+  const scopedListData = progressStatusBaseData.filter((item) => {
+    const progress = getClampedProgress(item.progress);
+
+    if (selectedProgressStatus === "done") return progress === 100;
+    if (selectedProgressStatus === "inProgress") return progress < 100;
+
+    return true;
+  });
+
   const completedMaintenanceCount = scopedListData.filter((item) => {
-    const progress = Math.min(Math.max(item.progress ?? 0, 0), 100);
-    return progress === 100;
+    return getClampedProgress(item.progress) === 100;
   }).length;
 
   const disciplineCounts = disciplineKpiLabels.map((discipline) => ({
@@ -256,6 +291,11 @@ const ListKerusakanPage: React.FC = () => {
           selectedWaktuPelaksanaan
             ? `Waktu Pelaksanaan: ${selectedWaktuPelaksanaan}`
             : null,
+          selectedProgressStatus !== "all"
+            ? `Progress: ${
+                selectedProgressStatus === "done" ? "Done" : "In Progress"
+              }`
+            : null,
         ].filter(Boolean);
 
         doc.setFontSize(9);
@@ -332,6 +372,7 @@ const ListKerusakanPage: React.FC = () => {
               tag: item.tag_name || "-",
               judul: item.judul || "-",
               issue: item.issue || "-",
+              progress: `${getClampedProgress(item.progress)}%`,
               waktuPelaksanaan: item.waktu_pelaksanaan || "-",
             });
           }
@@ -342,7 +383,15 @@ const ListKerusakanPage: React.FC = () => {
             startY: cursorY,
             margin: { left: marginX, right: marginX },
             head: [
-              ["No", "Picture", "Tag", "Judul", "Issue", "Waktu Pelaksanaan"],
+              [
+                "No",
+                "Picture",
+                "Tag",
+                "Judul",
+                "Issue",
+                "Progress",
+                "Waktu Pelaksanaan",
+              ],
             ],
             body: exportRows.map((row) => [
               row.no,
@@ -350,6 +399,7 @@ const ListKerusakanPage: React.FC = () => {
               row.tag,
               row.judul,
               row.issue,
+              row.progress,
               row.waktuPelaksanaan,
             ]),
             styles: {
@@ -370,9 +420,10 @@ const ListKerusakanPage: React.FC = () => {
               0: { cellWidth: 10, halign: "center" },
               1: { cellWidth: 26, halign: "center" },
               2: { cellWidth: 28 },
-              3: { cellWidth: 48 },
-              4: { cellWidth: 120 },
-              5: { cellWidth: 38 },
+              3: { cellWidth: 44 },
+              4: { cellWidth: 104 },
+              5: { cellWidth: 20, halign: "center" },
+              6: { cellWidth: 35 },
             },
             didDrawCell: (data) => {
               if (data.section !== "body" || data.column.index !== 1) return;
@@ -531,11 +582,11 @@ const ListKerusakanPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedUnit("")}
-              className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
-                selectedUnit === ""
-                  ? "border-sky-500 bg-sky-600 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
+              aria-pressed={selectedUnit === ""}
+              className={getFilterButtonClass(
+                selectedUnit === "",
+                "bg-sky-700",
+              )}
             >
               All
             </button>
@@ -549,11 +600,8 @@ const ListKerusakanPage: React.FC = () => {
                   key={unit}
                   type="button"
                   onClick={() => setSelectedUnit(active ? "" : unit)}
-                  className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
-                    active
-                      ? "border-sky-500 bg-sky-600 text-white"
-                      : `${color.border} ${color.background} ${color.text} hover:shadow-md`
-                  }`}
+                  aria-pressed={active}
+                  className={getFilterButtonClass(active, color.background)}
                 >
                   {unit}
                 </button>
@@ -568,11 +616,11 @@ const ListKerusakanPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedDiscipline("")}
-              className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
-                selectedDiscipline === ""
-                  ? "border-sky-500 bg-sky-600 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
+              aria-pressed={selectedDiscipline === ""}
+              className={getFilterButtonClass(
+                selectedDiscipline === "",
+                "bg-sky-700",
+              )}
             >
               All
             </button>
@@ -588,10 +636,11 @@ const ListKerusakanPage: React.FC = () => {
                   onClick={() =>
                     setSelectedDiscipline(active ? "" : discipline)
                   }
-                  className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
+                  aria-pressed={active}
+                  className={`${filterButtonBaseClass} ${
                     active
-                      ? "border-sky-500 bg-sky-600 text-white"
-                      : `${color.border} ${color.background} ${color.text} hover:shadow-md`
+                      ? `${color.border} ${color.background} ${color.text} shadow-lg`
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   {discipline}
@@ -607,11 +656,11 @@ const ListKerusakanPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedWaktuPelaksanaan("")}
-              className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
-                selectedWaktuPelaksanaan === ""
-                  ? "border-sky-500 bg-sky-600 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
+              aria-pressed={selectedWaktuPelaksanaan === ""}
+              className={getFilterButtonClass(
+                selectedWaktuPelaksanaan === "",
+                "bg-sky-700",
+              )}
             >
               All
             </button>
@@ -627,13 +676,64 @@ const ListKerusakanPage: React.FC = () => {
                   onClick={() =>
                     setSelectedWaktuPelaksanaan(active ? "" : waktuPelaksanaan)
                   }
-                  className={`rounded-sm border px-2 py-1 text-xs font-semibold shadow-sm transition-all ${
-                    active
-                      ? `border-transparent bg-gradient-to-r ${gradient} text-white`
-                      : `border-transparent bg-gradient-to-r ${gradient} text-white opacity-80 hover:opacity-100 hover:shadow-md`
-                  }`}
+                  aria-pressed={active}
+                  className={getFilterButtonClass(
+                    active,
+                    `bg-gradient-to-r ${gradient}`,
+                  )}
                 >
                   {waktuPelaksanaan}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Progress
+            </span>
+            {[
+              {
+                value: "all",
+                label: "All",
+                count: progressStatusCounts.all,
+                activeClass: "bg-sky-700",
+              },
+              {
+                value: "inProgress",
+                label: "In Progress",
+                count: progressStatusCounts.inProgress,
+                activeClass: "bg-gradient-to-r from-amber-500 to-orange-500",
+              },
+              {
+                value: "done",
+                label: "Done",
+                count: progressStatusCounts.done,
+                activeClass: "bg-gradient-to-r from-emerald-500 to-green-600",
+              },
+            ].map((option) => {
+              const active = selectedProgressStatus === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setSelectedProgressStatus(
+                      option.value as ProgressStatusFilter,
+                    )
+                  }
+                  aria-pressed={active}
+                  className={getFilterButtonClass(active, option.activeClass)}
+                >
+                  {option.label}
+                  <span
+                    className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
+                      active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {option.count}
+                  </span>
                 </button>
               );
             })}
