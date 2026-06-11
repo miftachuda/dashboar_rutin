@@ -10,6 +10,7 @@ import ListKerusakanPage from "./pages/ListKerusakanPage.tsx";
 import SettingPage from "./pages/SettingPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import TankTrend from "./pages/TankTrend.tsx";
+import Lims from "./pages/Lims.tsx";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<ListKerusakanPage />} />
           <Route path="/material" element={<MaterialPage />} />
           <Route path="/chemical" element={<ChemicalPage />} />
+          <Route path="/lims" element={<Lims />} />
           <Route path="/tank-trend" element={<TankTrend />} />
           <Route path="/accounts" element={<AccountPage />} />
           <Route path="/settings" element={<SettingPage />} />

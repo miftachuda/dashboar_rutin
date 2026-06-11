@@ -9,6 +9,7 @@ import {
   Settings,
   ChevronRight,
   ExternalLink,
+  FlaskConical,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -37,6 +38,12 @@ export default function Sidebar({
           name: "Chemical",
           path: "/chemical",
           icon: Inbox,
+          badge: null,
+        },
+        {
+          name: "LIMS",
+          path: "/lims",
+          icon: FlaskConical,
           badge: null,
         },
         {
