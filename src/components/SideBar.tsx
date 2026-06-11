@@ -8,6 +8,7 @@ import {
   Folder,
   Settings,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -42,6 +43,23 @@ export default function Sidebar({
           name: "Consumable material",
           path: "/material",
           icon: Folder,
+          badge: null,
+        },
+        {
+          name: "Tank Trend",
+          path: "/tank-trend",
+          icon: BarChart3,
+          badge: null,
+        },
+      ],
+    },
+    {
+      section: "EXTERNAL LINK",
+      items: [
+        {
+          name: "PITSTOP",
+          url: "https://pitstop.miftachuda.my.id",
+          icon: ExternalLink,
           badge: null,
         },
       ],
@@ -160,11 +178,19 @@ export default function Sidebar({
             <div className="flex gap-2 md:block md:space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const active = location.pathname === item.path;
+                const isExternal = "url" in item;
+                const active = !isExternal && location.pathname === item.path;
                 return (
                   <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
+                    key={isExternal ? item.url : item.path}
+                    onClick={() => {
+                      if (isExternal) {
+                        window.open(item.url, "_blank", "noopener,noreferrer");
+                        return;
+                      }
+
+                      navigate(item.path);
+                    }}
                     className={`
                       w-auto
                       min-w-fit

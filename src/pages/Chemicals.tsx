@@ -9,7 +9,7 @@ import {
   startOfWeek,
   startOfYear,
 } from "date-fns";
-import { Calculator, Loader2, Plus, Trash2 } from "lucide-react";
+import { Calculator, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/MainLayout";
 import DashboardPerformance from "@/components/chemical_usage/chart";
@@ -37,9 +37,9 @@ import {
 } from "@/components/ui/select";
 import { pb } from "@/lib/pocketbase";
 import { sendNotif } from "@/lib/sendnotif";
-import { ChemicalUsage } from "@/types/ChemicalUsage";
+import { ChemicalUsage, PropaneTank } from "@/types/ChemicalUsage";
 
-type Tank = "022V-103" | "024V-112";
+type Tank = PropaneTank;
 
 type VesselLevelResponse = {
   TagName: string;
@@ -89,6 +89,8 @@ const chemicalData = [
   // { name: "Antifoam", units: ["Liter", "kg"] },
   { name: "Propane", units: ["m³", "% Vessel"] },
 ];
+
+const propaneTanks: Tank[] = ["022V-103", "024V-112"];
 
 const vesselLevelEndpoint = "https://phd.miftachuda.my.id/GetData";
 
@@ -274,6 +276,9 @@ const ChemicalPage: React.FC = () => {
     chemicalName: "",
     amount: "",
     unit: "",
+    propaneTank: "022V-103" as Tank,
+    propaneStartLevel: "",
+    propaneEndLevel: "",
     description: "",
     time: toDateTimeLocalValue(new Date()),
   });
@@ -423,7 +428,26 @@ const ChemicalPage: React.FC = () => {
     })
     .filter(Boolean);
   const propane = grouped.Propane || [];
-  const allChemicalUsage = [furfural, mek, toluene, propane];
+  const propaneForMetrics = propane.map((item) => {
+    if (item.unit !== "% Vessel") return item;
+
+    const storedVolumeM3 = Number(item.propane_volume_m3);
+    const startLevel = Number(item.propane_start_level);
+    const endLevel = Number(item.propane_end_level);
+    const calculatedVolumeM3 =
+      item.propane_tank && Number.isFinite(startLevel) && Number.isFinite(endLevel)
+        ? getVolumeDifference(startLevel, endLevel, item.propane_tank)
+        : null;
+
+    return {
+      ...item,
+      amount: Number.isFinite(storedVolumeM3)
+        ? storedVolumeM3
+        : calculatedVolumeM3 ?? 0,
+      unit: "m³",
+    };
+  });
+  const allChemicalUsage = [furfural, mek, toluene, propaneForMetrics];
   const chemicals = {
     Furfural: furfural,
     MEK: mek,
@@ -441,31 +465,206 @@ const ChemicalPage: React.FC = () => {
       ...current,
       chemicalName,
       unit: units[0] || "",
+      propaneTank: "022V-103",
+      propaneStartLevel: "",
+      propaneEndLevel: "",
     }));
   };
 
+  const getChemicalExportAmounts = (item: ChemicalUsage) => {
+    const amount = Number(item.amount);
+    if (!Number.isFinite(amount)) {
+      return { percentAmount: null, m3Amount: null };
+    }
+
+    if (item.chemical_name === "Furfural") {
+      if (item.unit === "% Vessel") {
+        return { percentAmount: amount, m3Amount: amount * fpersentonmcubic };
+      }
+      if (item.unit === "m³") {
+        return { percentAmount: amount / fpersentonmcubic, m3Amount: amount };
+      }
+      if (item.unit === "kg") {
+        const m3Amount = (amount * ftontomcubic) / 1000;
+        return { percentAmount: m3Amount / fpersentonmcubic, m3Amount };
+      }
+    }
+
+    if (item.chemical_name === "MEK" || item.chemical_name === "Toluene") {
+      if (item.unit === "% Vessel") {
+        return { percentAmount: amount, m3Amount: amount * mtpersentonmcubic };
+      }
+      if (item.unit === "m³") {
+        return { percentAmount: amount / mtpersentonmcubic, m3Amount: amount };
+      }
+      if (item.unit === "kg") {
+        const m3Amount = (amount * mttontomcubic) / 1000;
+        return { percentAmount: m3Amount / mtpersentonmcubic, m3Amount };
+      }
+    }
+
+    if (item.chemical_name === "Propane") {
+      const storedVolumeM3 = Number(item.propane_volume_m3);
+      const hasStoredVolume = Number.isFinite(storedVolumeM3);
+
+      if (item.unit === "m³") {
+        return {
+          percentAmount: null,
+          m3Amount: hasStoredVolume ? storedVolumeM3 : amount,
+        };
+      }
+      if (item.unit === "% Vessel") {
+        const tankName = item.propane_tank;
+        const startLevel = Number(item.propane_start_level);
+        const endLevel = Number(item.propane_end_level);
+        const calculatedVolumeM3 =
+          tankName && Number.isFinite(startLevel) && Number.isFinite(endLevel)
+            ? getVolumeDifference(startLevel, endLevel, tankName)
+            : null;
+        const m3Amount = hasStoredVolume ? storedVolumeM3 : calculatedVolumeM3;
+        return { percentAmount: amount, m3Amount };
+      }
+    }
+
+    return { percentAmount: null, m3Amount: null };
+  };
+
+  const handleExportExcel = async () => {
+    if (filteredChemicalUsage.length === 0) {
+      toast.error("No chemical usage data to export");
+      return;
+    }
+
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.utils.book_new();
+
+    chemicalData.forEach((chemical) => {
+      const rows = filteredChemicalUsage
+        .filter((item) => item.chemical_name === chemical.name)
+        .sort((a, b) => b.time - a.time)
+        .map((item, index) => {
+          const { percentAmount, m3Amount } = getChemicalExportAmounts(item);
+          return {
+            No: index + 1,
+            Date: format(new Date(item.time * 1000), "dd MMM yyyy, HH:mm"),
+            Chemical: item.chemical_name,
+            Vessel: item.chemical_name === "Propane" ? item.propane_tank || "" : "",
+            "Start Level (%)": item.propane_start_level ?? "",
+            "End Level (%)": item.propane_end_level ?? "",
+            "Delta Level (%)":
+              item.chemical_name === "Propane" && item.unit === "% Vessel"
+                ? Number(item.amount)
+                : "",
+            Description: item.description || "",
+            "Amount (% Vessel)": percentAmount ?? "",
+            "Amount (m³)": m3Amount ?? "",
+            "Original Amount": Number(item.amount),
+            "Original Unit": item.unit,
+          };
+        });
+
+      const worksheet = XLSX.utils.json_to_sheet(rows, {
+        header: [
+          "No",
+          "Date",
+          "Chemical",
+          "Vessel",
+          "Start Level (%)",
+          "End Level (%)",
+          "Delta Level (%)",
+          "Description",
+          "Amount (% Vessel)",
+          "Amount (m³)",
+          "Original Amount",
+          "Original Unit",
+        ],
+      });
+      XLSX.utils.book_append_sheet(workbook, worksheet, chemical.name);
+    });
+
+    XLSX.writeFile(
+      workbook,
+      `chemical-usage-export-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`,
+    );
+  };
+
   const handleSave = async () => {
-    if (!form.chemicalName || !form.amount || !form.unit) {
+    const isPropane = form.chemicalName === "Propane";
+    const isPropanePercent = isPropane && form.unit === "% Vessel";
+
+    if (!form.chemicalName || !form.unit || (!isPropanePercent && !form.amount)) {
       alert("Please fill all required fields");
       return;
     }
 
+    if (isPropane && !form.propaneTank) {
+      alert("Please select propane vessel");
+      return;
+    }
+
+    const propaneStartLevel = Number(form.propaneStartLevel);
+    const propaneEndLevel = Number(form.propaneEndLevel);
+    const propaneVolumeM3 = isPropanePercent
+      ? getVolumeDifference(propaneStartLevel, propaneEndLevel, form.propaneTank)
+      : null;
+
+    if (
+      isPropanePercent &&
+      (!form.propaneStartLevel ||
+        !form.propaneEndLevel ||
+        !Number.isFinite(propaneStartLevel) ||
+        !Number.isFinite(propaneEndLevel))
+    ) {
+      alert("Please fill valid propane start and end levels");
+      return;
+    }
+
+    if (isPropanePercent && propaneEndLevel > 70) {
+      alert("End level cannot be more than 70%");
+      return;
+    }
+
+    if (isPropanePercent && propaneVolumeM3 == null) {
+      alert("Propane level must be between 0% and 70%");
+      return;
+    }
+
+    const savedAmount = isPropanePercent
+      ? propaneEndLevel - propaneStartLevel
+      : Number(form.amount);
+
+    const payload: Record<string, string | number | boolean> = {
+      chemical_name: form.chemicalName,
+      amount: savedAmount,
+      unit: form.unit,
+      time: Math.floor(new Date(form.time).getTime() / 1000),
+      description: form.description,
+      isDeleted: false,
+    };
+
+    if (isPropane) {
+      payload.propane_tank = form.propaneTank;
+      if (isPropanePercent) {
+        payload.propane_start_level = propaneStartLevel;
+        payload.propane_end_level = propaneEndLevel;
+        payload.propane_volume_m3 = propaneVolumeM3 ?? 0;
+      } else {
+        payload.propane_volume_m3 = Number(form.amount);
+      }
+    }
+
     try {
       setLoading(true);
-      await pb.collection("chemical_usage").create({
-        chemical_name: form.chemicalName,
-        amount: Number(form.amount),
-        unit: form.unit,
-        time: Math.floor(new Date(form.time).getTime() / 1000),
-        description: form.description,
-        isDeleted: false,
-      });
+      await pb.collection("chemical_usage").create(payload);
       await fetchChemicalUsage();
       setOpen(false);
       setForm({
         chemicalName: "",
         amount: "",
         unit: "",
+        propaneTank: "022V-103",
+        propaneStartLevel: "",
+        propaneEndLevel: "",
         description: "",
         time: toDateTimeLocalValue(new Date()),
       });
@@ -510,6 +709,21 @@ const ChemicalPage: React.FC = () => {
 
   const selectedChemicalData =
     chemicals[selectedChemical as keyof typeof chemicals] ?? [];
+  const isPropaneForm = form.chemicalName === "Propane";
+  const isPropanePercentForm = isPropaneForm && form.unit === "% Vessel";
+  const formPropaneStartLevel = Number(form.propaneStartLevel);
+  const formPropaneEndLevel = Number(form.propaneEndLevel);
+  const formPropaneDeltaLevel = formPropaneEndLevel - formPropaneStartLevel;
+  const isPropaneEndLevelOverLimit =
+    isPropanePercentForm && Number.isFinite(formPropaneEndLevel) && formPropaneEndLevel > 70;
+  const formPropaneVolumeM3 =
+    isPropanePercentForm && form.propaneStartLevel && form.propaneEndLevel
+      ? getVolumeDifference(
+          formPropaneStartLevel,
+          formPropaneEndLevel,
+          form.propaneTank,
+        )
+      : null;
 
   return (
     <DashboardLayout>
@@ -532,6 +746,15 @@ const ChemicalPage: React.FC = () => {
                 className="w-full bg-gradient-to-r from-sky-500 to-cyan-500 text-white hover:from-sky-600 hover:to-cyan-600 sm:w-auto"
               >
                 <Plus className="h-4 w-4" /> Add Chemical Usage
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportExcel}
+                disabled={filteredChemicalUsage.length === 0}
+                className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-60 sm:w-auto"
+              >
+                <FileSpreadsheet className="h-4 w-4" /> Export Excel
               </Button>
               <select
                 value={filter}
@@ -583,7 +806,7 @@ const ChemicalPage: React.FC = () => {
             },
             {
               title: "Propane Used",
-              value: sumAmounts(propane),
+              value: sumAmounts(propaneForMetrics),
               icon: <div className="font-extrabold">PROP</div>,
               gradient: "linear-gradient(135deg,#ef4444,#f97316)",
             },
@@ -831,24 +1054,26 @@ const ChemicalPage: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
-                <Label
-                  htmlFor="amount"
-                  className="text-slate-600 sm:text-right"
-                >
-                  Amount
-                </Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.1"
-                  value={form.amount}
-                  onChange={(event) =>
-                    setForm({ ...form, amount: event.target.value })
-                  }
-                  className="sm:col-span-3"
-                />
-              </div>
+              {!isPropanePercentForm && (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
+                  <Label
+                    htmlFor="amount"
+                    className="text-slate-600 sm:text-right"
+                  >
+                    Amount
+                  </Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.1"
+                    value={form.amount}
+                    onChange={(event) =>
+                      setForm({ ...form, amount: event.target.value })
+                    }
+                    className="sm:col-span-3"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
                 <Label htmlFor="unit" className="text-slate-600 sm:text-right">
@@ -871,6 +1096,103 @@ const ChemicalPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {isPropaneForm && (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
+                  <Label
+                    htmlFor="propaneTank"
+                    className="text-slate-600 sm:text-right"
+                  >
+                    Vessel
+                  </Label>
+                  <Select
+                    onValueChange={(value) =>
+                      setForm({ ...form, propaneTank: value as Tank })
+                    }
+                    value={form.propaneTank}
+                  >
+                    <SelectTrigger className="sm:col-span-3">
+                      <SelectValue placeholder="Select propane vessel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {propaneTanks.map((propaneTank) => (
+                        <SelectItem key={propaneTank} value={propaneTank}>
+                          {propaneTank}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {isPropanePercentForm && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-start">
+                  <Label className="text-slate-600 sm:pt-2 sm:text-right">
+                    Level Delta
+                  </Label>
+                  <div className="grid gap-3 sm:col-span-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label
+                          htmlFor="propaneStartLevel"
+                          className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+                        >
+                          Start Level (%)
+                        </Label>
+                        <Input
+                          id="propaneStartLevel"
+                          type="number"
+                          min={0}
+                          max={70}
+                          step="0.1"
+                          value={form.propaneStartLevel}
+                          onChange={(event) =>
+                            setForm({
+                              ...form,
+                              propaneStartLevel: event.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label
+                          htmlFor="propaneEndLevel"
+                          className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+                        >
+                          End Level (%)
+                        </Label>
+                        <Input
+                          id="propaneEndLevel"
+                          type="number"
+                          min={0}
+                          max={70}
+                          step="0.1"
+                          value={form.propaneEndLevel}
+                          onChange={(event) =>
+                            setForm({
+                              ...form,
+                              propaneEndLevel: event.target.value,
+                            })
+                          }
+                        />
+                        {isPropaneEndLevelOverLimit && (
+                          <p className="mt-1 text-xs font-semibold text-red-600">
+                            End level cannot be more than 70%.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                      <p className="font-semibold">
+                        Delta Level: {Number.isFinite(formPropaneDeltaLevel) ? formPropaneDeltaLevel.toFixed(2) : "-"}%
+                      </p>
+                      <p className="mt-1 font-bold">
+                        Calculated Volume: {formPropaneVolumeM3 != null ? `${formPropaneVolumeM3.toFixed(2)} m³` : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center">
                 <Label htmlFor="time" className="text-slate-600 sm:text-right">

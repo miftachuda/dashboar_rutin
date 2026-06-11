@@ -26,6 +26,13 @@ const CardList = ({
         sortedData.map((item, index) => {
           const itemDate = new Date(item.time * 1000);
           const isNew = Date.now() - itemDate.getTime() <= 24 * 60 * 60 * 1000;
+          const isPropanePercent =
+            item.chemical_name === "Propane" && item.unit === "% Vessel";
+          const propaneVolumeM3 = Number(item.propane_volume_m3);
+          const amountLabel =
+            isPropanePercent && Number.isFinite(propaneVolumeM3)
+              ? `${propaneVolumeM3.toFixed(2)} m³`
+              : `${Number(item.amount).toFixed(2)} ${item.unit}`;
 
           return (
             <div
@@ -51,6 +58,19 @@ const CardList = ({
                   <p className="text-sm font-semibold text-sky-700">
                     {item.chemical_name}
                   </p>
+                  {item.chemical_name === "Propane" && item.propane_tank && (
+                    <span className="mt-2 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600">
+                      Vessel: {item.propane_tank}
+                    </span>
+                  )}
+                  {isPropanePercent && (
+                    <p className="mt-2 text-xs font-semibold text-orange-600">
+                      Level: {item.propane_start_level ?? "-"}% - {item.propane_end_level ?? "-"}%
+                      {Number.isFinite(propaneVolumeM3)
+                        ? ` (${Number(item.amount).toFixed(2)}%, ${propaneVolumeM3.toFixed(2)} m³)`
+                        : ""}
+                    </p>
+                  )}
                   <p className="mt-2 break-words rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
                     {item.description || "-"}
                   </p>
@@ -73,7 +93,7 @@ const CardList = ({
                   </button>
                   <p className="text-sm font-semibold text-slate-500">Amount</p>
                   <p className="break-words text-xl font-bold text-sky-700 sm:text-2xl">
-                    {Number(item.amount).toFixed(2)} {item.unit}
+                    {amountLabel}
                   </p>
                   <p className="mt-2 rounded-xl bg-sky-50 px-3 py-2 text-xs font-medium text-slate-500">
                     {format(itemDate, "EEEE, dd-MMMM-yyyy HH.mm", { locale: id })} -{" "}

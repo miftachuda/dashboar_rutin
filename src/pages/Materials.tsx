@@ -525,6 +525,53 @@ const MaterialPage = () => {
     }
   };
 
+  const handleExportExcel = async () => {
+    if (materials.length === 0) return;
+
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.utils.book_new();
+
+    consumableMaterialSections.forEach((section) => {
+      const rows = materials
+        .filter((item) => item.section === section)
+        .map((item, index) => ({
+          No: index + 1,
+          "Material Name": item.material_name || "-",
+          "Actual Stock": Number(item.stock ?? 0),
+          Unit: item.unit || "-",
+          "Last Updated Date": formatDateTime(item.updated),
+        }));
+
+      const worksheet = XLSX.utils.json_to_sheet(
+        rows.length > 0
+          ? rows
+          : [
+              {
+                No: "",
+                "Material Name": "",
+                "Actual Stock": "",
+                Unit: "",
+                "Last Updated Date": "",
+              },
+            ],
+      );
+
+      worksheet["!cols"] = [
+        { wch: 8 },
+        { wch: 42 },
+        { wch: 16 },
+        { wch: 12 },
+        { wch: 24 },
+      ];
+      XLSX.utils.book_append_sheet(workbook, worksheet, section);
+    });
+
+    XLSX.writeFile(
+      workbook,
+      `consumable-material-stock-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`,
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="flex w-full flex-col gap-4 p-3 sm:p-6">
@@ -540,19 +587,29 @@ const MaterialPage = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                fetchMaterials();
-                fetchConsumptionRates();
-                fetchLatestStockLogs();
-              }}
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 transition-all hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              Refresh
-            </button>
+            <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                disabled={loading || materials.length === 0}
+                className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Export Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  fetchMaterials();
+                  fetchConsumptionRates();
+                  fetchLatestStockLogs();
+                }}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 transition-all hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
 
