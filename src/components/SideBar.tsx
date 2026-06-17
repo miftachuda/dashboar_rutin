@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ExternalLink,
   FlaskConical,
+  Activity,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -41,12 +42,6 @@ export default function Sidebar({
           badge: null,
         },
         {
-          name: "LIMS",
-          path: "/lims",
-          icon: FlaskConical,
-          badge: null,
-        },
-        {
           name: "Consumable material",
           path: "/material",
           icon: Folder,
@@ -56,6 +51,18 @@ export default function Sidebar({
           name: "Tank Trend",
           path: "/tank-trend",
           icon: BarChart3,
+          badge: null,
+        },
+        {
+          name: "Live Tank Level",
+          path: "/live-tank-level",
+          icon: Activity,
+          badge: null,
+        },
+        {
+          name: "LIMS",
+          path: "/lims",
+          icon: FlaskConical,
           badge: null,
         },
       ],

@@ -11,6 +11,7 @@ import SettingPage from "./pages/SettingPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import TankTrend from "./pages/TankTrend.tsx";
 import Lims from "./pages/Lims.tsx";
+import LiveTankLevel from "./pages/LiveTankLevel.tsx";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/chemical" element={<ChemicalPage />} />
           <Route path="/lims" element={<Lims />} />
           <Route path="/tank-trend" element={<TankTrend />} />
+          <Route path="/live-tank-level" element={<LiveTankLevel />} />
           <Route path="/accounts" element={<AccountPage />} />
           <Route path="/settings" element={<SettingPage />} />
           <Route path="*" element={<NotFound />} />
