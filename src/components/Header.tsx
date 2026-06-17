@@ -1,60 +1,93 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Bell, Loader2 } from "lucide-react";
+import { pb } from "@/lib/pocketbase";
+
+type NotificationRecord = {
+  id: string;
+  title: string;
+  page: string;
+  message: string;
+  action?: string;
+  collection?: string;
+  record_id?: string;
+  created: string;
+};
+
+function isToday(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+function formatTimeAgo(value: string) {
+  const date = new Date(value);
+  const diffSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - date.getTime()) / 1000),
+  );
+
+  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
+  if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
+
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function Header() {
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [now, setNow] = useState<Date>(new Date());
-  const [autoRefresh, setAutoRefresh] = useState(() => {
-    const saved = localStorage.getItem("autoRefresh");
-    return saved === "true"; // default false if null
-  });
-  useEffect(() => {
-    localStorage.setItem("autoRefresh", autoRefresh.toString());
-  }, [autoRefresh]);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // function to refresh data
-  const refreshData = async () => {
+  const hasTodayNotification = notifications.some((item) => isToday(item.created));
+
+  const fetchNotifications = async () => {
     try {
-      console.log("refreshing data...");
-
-      window.location.reload(); // reload page
-      setLastRefresh(new Date());
-    } catch (err) {
-      console.error(err);
+      setLoading(true);
+      const records = await pb.collection("notifications").getFullList<NotificationRecord>({
+        sort: "-created",
+        perPage: 20,
+      });
+      setNotifications(records);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
     }
   };
-  // auto refresh every 3 minutes
+
   useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(
-      () => {
-        refreshData();
-      },
-      5 * 60 * 1000,
-    );
-
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  // update "time ago" every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
   }, []);
-  const getTimeAgo = () => {
-    const diff = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000);
 
-    if (diff < 60) return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    return `${Math.floor(diff / 3600)}h ago`;
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-sm">
       <div className="max-w-8xl mx-auto flex min-h-14 items-center gap-3 px-3 py-2 sm:h-16 sm:px-6 lg:px-8">
-        {/* LEFT: Title */}
         <div className="min-w-0">
           <h1 className="font-display text-sm font-bold leading-tight text-foreground sm:text-lg">
             Dashboard Tracking Lube Oil Complex II
@@ -64,31 +97,82 @@ export default function Header() {
           </p>
         </div>
 
-        {/* RIGHT: Toggle + last refresh */}
-        <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
-          {/* Toggle Switch */}
+        <div ref={dropdownRef} className="relative ml-auto shrink-0">
           <button
-            onClick={() => setAutoRefresh((prev) => !prev)}
-            className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${
-              autoRefresh ? "bg-green-500" : "bg-gray-400"
-            }`}
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-100 bg-white text-sky-700 shadow-sm transition-all hover:bg-sky-50"
+            aria-label="Open notifications"
           >
-            <span
-              className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-                autoRefresh ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Bell className="h-5 w-5" />
+            )}
+            {hasTodayNotification && (
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+            )}
           </button>
 
-          {/* Label */}
-          <span className="hidden text-[10px] font-mono text-muted-foreground min-[420px]:inline">
-            Auto Refresh: {autoRefresh ? "ON" : "OFF"}
-          </span>
+          {open && (
+            <div className="absolute right-0 top-12 z-50 w-[min(90vw,380px)] overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-sky-100 bg-sky-50/70 px-4 py-3">
+                <div>
+                  <p className="text-sm font-extrabold text-sky-950">
+                    Notifications
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Latest PocketBase updates
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchNotifications}
+                  className="rounded-xl border border-sky-200 bg-white px-3 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-50"
+                >
+                  Refresh
+                </button>
+              </div>
 
-          {/* Last Refresh */}
-          <p className="text-[10px] text-muted-foreground font-mono">
-            Last refresh: {getTimeAgo()}
-          </p>
+              <div className="max-h-[420px] overflow-y-auto p-3">
+                {notifications.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-sky-100 bg-sky-50/40 px-4 py-8 text-center text-sm text-slate-500">
+                    No notifications yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {notifications.map((item) => {
+                      const createdToday = isToday(item.created);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="relative rounded-2xl border border-sky-100 bg-white p-3 shadow-sm"
+                        >
+                          {createdToday && (
+                            <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-red-500" />
+                          )}
+                          <div className="pr-5">
+                            <p className="text-sm font-bold text-sky-950">
+                              {item.title || "Notification"}
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">
+                              {item.message || "-"}
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                              {item.page && <span>{item.page}</span>}
+                              {item.action && <span>{item.action}</span>}
+                              <span>{formatTimeAgo(item.created)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

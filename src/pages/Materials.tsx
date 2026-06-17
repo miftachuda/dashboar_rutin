@@ -8,6 +8,7 @@ import {
 import { Loader2, Trash2, Triangle } from "lucide-react";
 import DashboardLayout from "@/components/MainLayout";
 import { pb } from "@/lib/pocketbase";
+import { sendNotif } from "@/lib/sendnotif";
 import {
   ConsumableMaterial,
   ConsumableMaterialSection,
@@ -361,6 +362,15 @@ const MaterialPage = () => {
           minimum_stock: nextMinimumStock,
         });
 
+      await sendNotif({
+        title: "[Material] Minimum Stock Updated",
+        page: "material",
+        message: `Minimum stock updated for ${selectedMaterial.material_name}.`,
+        action: "minimum_stock_update",
+        collection: "consumable_material",
+        record_id: selectedMaterial.id,
+      });
+
       setMaterials((current) =>
         current.map((material) =>
           material.id === selectedMaterial.id
@@ -437,6 +447,24 @@ const MaterialPage = () => {
           isDeleted: false,
         });
 
+      await sendNotif({
+        title: "[Material Stock] Updated",
+        page: "material",
+        message: `Stock transaction saved for ${selectedMaterial.material_name}.`,
+        action: stockMode === "add" ? "add_stock" : "stock_opname",
+        collection: "consumable_material",
+        record_id: selectedMaterial.id,
+      });
+
+      await sendNotif({
+        title: "[Material Stock Log] Created",
+        page: "material",
+        message: `Stock log created for ${selectedMaterial.material_name}.`,
+        action: "create",
+        collection: "consumable_material_stock_log",
+        record_id: createdLog.id,
+      });
+
       setMaterials((current) =>
         current.map((material) =>
           material.id === selectedMaterial.id
@@ -499,6 +527,24 @@ const MaterialPage = () => {
         .update(deleteStockLogTarget.id, {
           isDeleted: true,
         });
+
+      await sendNotif({
+        title: "[Material Stock] Rolled Back",
+        page: "material",
+        message: `Stock transaction deleted for ${selectedMaterial.material_name}.`,
+        action: "soft_delete",
+        collection: "consumable_material_stock_log",
+        record_id: deleteStockLogTarget.id,
+      });
+
+      await sendNotif({
+        title: "[Material Stock] Updated",
+        page: "material",
+        message: `Stock restored for ${selectedMaterial.material_name}.`,
+        action: "update",
+        collection: "consumable_material",
+        record_id: selectedMaterial.id,
+      });
 
       setMaterials((current) =>
         current.map((material) =>

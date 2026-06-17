@@ -4,6 +4,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { pb } from "@/lib/pocketbase";
 import { ListData } from "@/types/listdata";
 import { WaktuPelaksanaan } from "@/types/enum";
+import { sendNotif } from "@/lib/sendnotif";
 import {
   ChevronLeft,
   ChevronRight,
@@ -330,6 +331,14 @@ export default function MaintenanceCardList({
       const updatedItem = await pb
         .collection("db_maintenance")
         .update(item.id, formData);
+      await sendNotif({
+        title: "[Maintenance] Photo Uploaded",
+        page: "tracking",
+        message: `Photo uploaded for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
       setDetailItem((current) => {
         if (!current || current.id !== item.id) return current;
 
@@ -410,6 +419,14 @@ export default function MaintenanceCardList({
         const uploadedItem = await pb
           .collection("db_maintenance")
           .update(detailItem.id, uploadFormData);
+        await sendNotif({
+          title: "[Maintenance] Timeline Photo Uploaded",
+          page: "tracking",
+          message: `Timeline photo uploaded for ${detailItem.tag_name || detailItem.judul}.`,
+          action: "update",
+          collection: "db_maintenance",
+          record_id: detailItem.id,
+        });
         nextPhotos = uploadedItem.photo ?? nextPhotos;
         timelinePhotoNames = nextPhotos
           .filter((photo) => !(detailItem.photo ?? []).includes(photo))
@@ -445,6 +462,15 @@ export default function MaintenanceCardList({
         .update(detailItem.id, {
           tracking: nextTracking,
         });
+
+      await sendNotif({
+        title: "[Maintenance] Timeline Updated",
+        page: "tracking",
+        message: `Timeline updated for ${detailItem.tag_name || detailItem.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: detailItem.id,
+      });
 
       setDetailItem((current) => {
         if (!current || current.id !== detailItem.id) return current;
@@ -484,6 +510,15 @@ export default function MaintenanceCardList({
           progress,
         });
 
+      await sendNotif({
+        title: "[Maintenance] Progress Updated",
+        page: "tracking",
+        message: `Progress updated for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
+
       setDetailItem((current) => {
         if (!current || current.id !== item.id) return current;
 
@@ -518,6 +553,14 @@ export default function MaintenanceCardList({
       setUpdatingReferenceId(item.id);
       await pb.collection("db_maintenance").update(item.id, {
         reference: nextReference,
+      });
+      await sendNotif({
+        title: "[Maintenance] Reference Updated",
+        page: "tracking",
+        message: `Reference updated for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
       });
       element.value = nextReference;
       setDetailItem((current) =>
@@ -569,6 +612,15 @@ export default function MaintenanceCardList({
           judul: nextTitle,
         });
 
+      await sendNotif({
+        title: "[Maintenance] Title Updated",
+        page: "tracking",
+        message: `Title updated for ${item.tag_name || nextTitle}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
+
       setDetailItem((current) =>
         current?.id === item.id
           ? {
@@ -613,6 +665,15 @@ export default function MaintenanceCardList({
         .update(item.id, {
           issue: nextIssue,
         });
+
+      await sendNotif({
+        title: "[Maintenance] Issue Updated",
+        page: "tracking",
+        message: `Issue updated for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
 
       setDetailItem((current) =>
         current?.id === item.id
@@ -659,6 +720,15 @@ export default function MaintenanceCardList({
         .update(item.id, {
           waktu_pelaksanaan: nextValue,
         });
+
+      await sendNotif({
+        title: "[Maintenance] Schedule Updated",
+        page: "tracking",
+        message: `Waktu pelaksanaan updated for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
 
       setDetailItem((current) =>
         current?.id === item.id
@@ -725,6 +795,14 @@ export default function MaintenanceCardList({
       await pb.collection("db_maintenance").update(deleteTarget.id, {
         isDeleted: true,
       });
+      await sendNotif({
+        title: "[Maintenance] Deleted",
+        page: "tracking",
+        message: `Maintenance record deleted for ${deleteTarget.tag_name || deleteTarget.judul}.`,
+        action: "soft_delete",
+        collection: "db_maintenance",
+        record_id: deleteTarget.id,
+      });
       setPreview((current) =>
         current?.item.id === deleteTarget.id ? null : current,
       );
@@ -760,6 +838,14 @@ export default function MaintenanceCardList({
       const updatedItem = await pb
         .collection("db_maintenance")
         .update(item.id, formData);
+      await sendNotif({
+        title: "[Maintenance] Photo Deleted",
+        page: "tracking",
+        message: `Photo deleted for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
       setPreview((current) => {
         if (!current || current.item.id !== item.id) return current;
 

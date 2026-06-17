@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { WaktuPelaksanaan } from "@/types/enum";
 import { pb } from "@/lib/pocketbase";
+import { sendNotif } from "@/lib/sendnotif";
 
 const disciplineOptions = [
   "Rotating",
@@ -196,7 +197,16 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
         dataToSave.append("photo", photo.file, photo.file.name);
       });
 
-      await pb.collection("db_maintenance").create(dataToSave);
+      const createdRecord = await pb.collection("db_maintenance").create(dataToSave);
+
+      await sendNotif({
+        title: "[Maintenance] New Record",
+        page: "tracking",
+        message: `A new maintenance record was created for ${formData.tag_name}.`,
+        action: "create",
+        collection: "db_maintenance",
+        record_id: createdRecord.id,
+      });
 
       onSaved?.();
       onClose();

@@ -14,6 +14,7 @@ import {
 import { fetchPHDData, GetDataParams } from "../lib/phdfetch";
 import dayjs from "dayjs";
 import { ChevronDown } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 // === NEW: Imports for Date Picker ===
 import DatePicker from "react-datepicker";
@@ -36,15 +37,76 @@ interface TagOption {
 
 let lastDisplayedDay: string | null = null;
 
+function normalizeTankKey(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+const tagOptions: TagOption[] = [
+  { label: "41T-101", value: "41T101_P_LEVEL.pv", temp: "41T101_P_TEMP.PV" },
+  { label: "41T-102", value: "41T102_P_LEVEL.pv", temp: "41T102_P_TEMP.PV" },
+  { label: "41T-103", value: "41T103_P_LEVEL.pv", temp: "41T103_P_TEMP.PV" },
+  { label: "41T-104", value: "41T104_P_LEVEL.pv", temp: "41T104_P_TEMP.PV" },
+  { label: "41T-105", value: "41T105_P_LEVEL.pv", temp: "41T105_P_TEMP.PV" },
+  { label: "41T-106", value: "41T106_P_LEVEL.pv", temp: "41T106_P_TEMP.PV" },
+  { label: "41T-107", value: "41T107_P_LEVEL.pv", temp: "41T107_P_TEMP.PV" },
+  { label: "41T-108", value: "41T108_P_LEVEL.pv", temp: "41T108_P_TEMP.PV" },
+  { label: "41T-109", value: "41T109_P_LEVEL.pv", temp: "41T109_P_TEMP.PV" },
+  { label: "41T-110", value: "41T110_P_LEVEL.pv", temp: "41T110_P_TEMP.PV" },
+  { label: "41T-111", value: "41T111_P_LEVEL.pv", temp: "41T111_P_TEMP.PV" },
+  { label: "41T-112", value: "41T112_P_LEVEL.pv", temp: "41T112_P_TEMP.PV" },
+  { label: "41T-113", value: "41T113_P_LEVEL.pv", temp: "41T113_P_TEMP.PV" },
+  { label: "41T-114", value: "41T114_P_LEVEL.pv", temp: "41T114_P_TEMP.PV" },
+  { label: "41T-115", value: "41T115_P_LEVEL.pv", temp: "41T115_P_TEMP.PV" },
+  { label: "41T-116", value: "41T116_P_LEVEL.pv", temp: "41T116_P_TEMP.PV" },
+  { label: "41T-117", value: "41T117_P_LEVEL.pv", temp: "41T117_P_TEMP.PV" },
+  { label: "41T-118", value: "41T118_P_LEVEL.pv", temp: "41T118_P_TEMP.PV" },
+  { label: "41T-119", value: "41T119_P_LEVEL.pv", temp: "41T119_P_TEMP.PV" },
+  { label: "41T-120", value: "41T120_P_LEVEL.pv", temp: "41T120_P_TEMP.PV" },
+  { label: "41T-121", value: "41T121_P_LEVEL.pv", temp: "41T121_P_TEMP.PV" },
+  { label: "41T-122", value: "41T122_P_LEVEL.pv", temp: "41T122_P_TEMP.PV" },
+  { label: "41T-301", value: "41T-301_P_LEVEL.pv", temp: "41T-301_P_TEMP.PV" },
+  { label: "41T-302", value: "41T-302_P_LEVEL.pv", temp: "41T-302_P_TEMP.PV" },
+  { label: "41T-303", value: "41T-303_P_LEVEL.pv", temp: "41T-303_P_TEMP.PV" },
+  { label: "41T-304", value: "41T-304_P_LEVEL.pv", temp: "41T-304_P_TEMP.PV" },
+  { label: "41T-305", value: "41T-305_P_LEVEL.pv", temp: "41T-305_P_TEMP.PV" },
+  { label: "41T-306", value: "41T-306_P_LEVEL.pv", temp: "41T-306_P_TEMP.PV" },
+  { label: "41T-307", value: "41T-307_P_LEVEL.pv", temp: "41T-307_P_TEMP.PV" },
+  { label: "41T-308", value: "41T-308_P_LEVEL.pv", temp: "41T-308_P_TEMP.PV" },
+  { label: "41T-309", value: "41T-309_P_LEVEL.pv", temp: "41T-309_P_TEMP.PV" },
+  { label: "41T-310", value: "41T-310_P_LEVEL.pv", temp: "41T-310_P_TEMP.PV" },
+  { label: "41T-311", value: "41T-311_P_LEVEL.pv", temp: "41T-311_P_TEMP.PV" },
+  { label: "41T-313", value: "41T-313_P_LEVEL.pv", temp: "41T-313_P_TEMP.PV" },
+  { label: "41T-315", value: "41T-315_P_LEVEL.pv", temp: "41T-315_P_TEMP.PV" },
+  { label: "41T-316", value: "41T-316_P_LEVEL.pv", temp: "41T-316_P_TEMP.PV" },
+  { label: "41T-317", value: "41T-317_P_LEVEL.pv", temp: "41T-317_P_TEMP.PV" },
+  { label: "43T-1", value: "43T1_P_LEVEL.pv", temp: "43T1_P_TEMP.PV" },
+  { label: "35T-2", value: "35T2_P_LEVEL.pv", temp: "35T2_P_TEMP.PV" },
+  { label: "35T-4", value: "35T4_P_LEVEL.pv", temp: "35T4_P_TEMP.PV" },
+  { label: "41T-17", value: "41T17_P_LEVEL.pv", temp: "41T17_P_TEMP.PV" },
+  { label: "41T-18", value: "41T18_P_LEVEL.pv", temp: "41T18_P_TEMP.PV" },
+  { label: "41T-24", value: "41T24_P_LEVEL.pv", temp: "41T24_P_TEMP.PV" },
+  { label: "41T-25", value: "41T25_P_LEVEL.pv", temp: "41T25_P_TEMP.PV" },
+];
+
+function getTagOptionFromParam(tank: string | null) {
+  if (!tank) return tagOptions[0];
+
+  return (
+    tagOptions.find(
+      (tag) => normalizeTankKey(tag.label) === normalizeTankKey(tank),
+    ) ?? tagOptions[0]
+  );
+}
+
 const TankTrend: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const tankParam = searchParams.get("tank");
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<TagOption>({
-    label: "41T-101",
-    value: "41T101_P_LEVEL.pv",
-    temp: "41T101_P_TEMP.PV",
-  });
+  const [selectedTag, setSelectedTag] = useState<TagOption>(() =>
+    getTagOptionFromParam(tankParam),
+  );
   const [search, setSearch] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -52,33 +114,14 @@ const TankTrend: React.FC = () => {
     dayjs().subtract(7, "day").toDate(),
   );
   const [endDate, setEndDate] = useState(new Date());
-  const tagOptions: { label: string; value: string; temp: string }[] = [
-    { label: "41T-101", value: "41T101_P_LEVEL.pv", temp: "41T101_P_TEMP.PV" },
-    { label: "41T-102", value: "41T102_P_LEVEL.pv", temp: "41T102_P_TEMP.PV" },
-    { label: "41T-103", value: "41T103_P_LEVEL.pv", temp: "41T103_P_TEMP.PV" },
-    { label: "41T-104", value: "41T104_P_LEVEL.pv", temp: "41T104_P_TEMP.PV" },
-    { label: "41T-105", value: "41T105_P_LEVEL.pv", temp: "41T105_P_TEMP.PV" },
-    { label: "41T-106", value: "41T106_P_LEVEL.pv", temp: "41T106_P_TEMP.PV" },
-    { label: "41T-107", value: "41T107_P_LEVEL.pv", temp: "41T107_P_TEMP.PV" },
-    { label: "41T-108", value: "41T108_P_LEVEL.pv", temp: "41T108_P_TEMP.PV" },
-    { label: "41T-109", value: "41T109_P_LEVEL.pv", temp: "41T109_P_TEMP.PV" },
-    { label: "41T-110", value: "41T110_P_LEVEL.pv", temp: "41T110_P_TEMP.PV" },
-    { label: "41T-111", value: "41T111_P_LEVEL.pv", temp: "41T111_P_TEMP.PV" },
-    { label: "41T-112", value: "41T112_P_LEVEL.pv", temp: "41T112_P_TEMP.PV" },
-    { label: "41T-113", value: "41T113_P_LEVEL.pv", temp: "41T113_P_TEMP.PV" },
-    { label: "41T-114", value: "41T114_P_LEVEL.pv", temp: "41T114_P_TEMP.PV" },
-    { label: "41T-115", value: "41T115_P_LEVEL.pv", temp: "41T115_P_TEMP.PV" },
-    { label: "41T-116", value: "41T116_P_LEVEL.pv", temp: "41T116_P_TEMP.PV" },
-    { label: "41T-117", value: "41T117_P_LEVEL.pv", temp: "41T117_P_TEMP.PV" },
-    { label: "41T-118", value: "41T118_P_LEVEL.pv", temp: "41T118_P_TEMP.PV" },
-    { label: "41T-119", value: "41T119_P_LEVEL.pv", temp: "41T119_P_TEMP.PV" },
-    { label: "41T-120", value: "41T120_P_LEVEL.pv", temp: "41T120_P_TEMP.PV" },
-    { label: "41T-121", value: "41T121_P_LEVEL.pv", temp: "41T121_P_TEMP.PV" },
-    { label: "41T-122", value: "41T122_P_LEVEL.pv", temp: "41T122_P_TEMP.PV" },
-  ];
   const filteredOptions = tagOptions.filter((tag) =>
     tag.label.toLowerCase().includes(search.toLowerCase()),
   );
+
+  useEffect(() => {
+    setSelectedTag(getTagOptionFromParam(tankParam));
+  }, [tankParam]);
+
   function smoothAnomalies(data: ChartDataPoint[]): ChartDataPoint[] {
     if (data.length === 0) return [];
 
@@ -361,13 +404,13 @@ const TankTrend: React.FC = () => {
     100;
   return (
     <DashboardLayout>
-      <div className="flex h-full w-full flex-col gap-4 p-3 text-slate-900 sm:p-6">
+      <div className="flex h-full min-h-0 w-full flex-col gap-2 overflow-hidden p-2 text-slate-900 sm:p-3">
         {/* === NEW: Control Bar Wrapper === */}
-        <div className="flex flex-wrap items-center gap-4 rounded-3xl border border-sky-100 bg-white p-4 shadow-sm">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-3xl border border-sky-100 bg-white p-3 shadow-sm">
           {/* === Dropdown + Search (Existing) === */}
-          <div className="relative w-64" ref={dropdownRef}>
+          <div className="relative w-52" ref={dropdownRef}>
             <div
-              className="flex cursor-pointer select-none items-center justify-between rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-2 text-sm font-semibold text-sky-900 outline-none transition-all hover:bg-sky-100"
+              className="flex cursor-pointer select-none items-center justify-between rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-1.5 text-sm font-semibold text-sky-900 outline-none transition-all hover:bg-sky-100"
               onClick={() => setOpen((prev) => !prev)}
             >
               <span>{selectedTag.label}</span>
@@ -388,7 +431,7 @@ const TankTrend: React.FC = () => {
                   className="w-full border-b border-sky-100 bg-sky-50/50 px-3 py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400"
                   autoFocus
                 />
-                <div className="max-h-48 overflow-y-auto">
+                <div className="max-h-40 overflow-y-auto">
                   {filteredOptions.map((opt) => (
                     <div
                       key={opt.value}
@@ -417,10 +460,10 @@ const TankTrend: React.FC = () => {
           </div>
 
           {/* === NEW: Date Range Selectors === */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <label
               htmlFor="startDate"
-              className="text-sm font-semibold text-slate-600"
+              className="text-xs font-semibold text-slate-600"
             >
               Start:
             </label>
@@ -429,14 +472,14 @@ const TankTrend: React.FC = () => {
               onChange={(date: Date) => setStartDate(date)}
               showTimeSelect
               dateFormat="dd-MMM-yyyy HH:mm"
-              className="w-40 rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-36 rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-300"
               id="startDate"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <label
               htmlFor="endDate"
-              className="text-sm font-semibold text-slate-600"
+              className="text-xs font-semibold text-slate-600"
             >
               End:
             </label>
@@ -445,12 +488,12 @@ const TankTrend: React.FC = () => {
               onChange={(date: Date) => setEndDate(date)}
               showTimeSelect
               dateFormat="dd-MMM-yyyy HH:mm"
-              className="w-40 rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-36 rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-1.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-300"
               id="endDate"
             />
           </div>
           <select
-            className="rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-2 text-sm font-medium text-sky-900 outline-none hover:bg-sky-100 focus:ring-2 focus:ring-sky-300"
+            className="rounded-xl border border-sky-200 bg-sky-50/60 px-3 py-1.5 text-xs font-medium text-sky-900 outline-none hover:bg-sky-100 focus:ring-2 focus:ring-sky-300"
             defaultValue="1w"
             onChange={(e) => {
               const value = e.target.value;
@@ -508,28 +551,26 @@ const TankTrend: React.FC = () => {
           </select>
           {/* === END NEW === */}
 
-          <div className="flex flex-wrap gap-2 rounded-2xl border border-sky-100 bg-sky-50/50 p-2 text-slate-700">
-            <div className="flex flex-col items-center justify-center rounded-xl border border-sky-100 bg-white px-3 py-2 shadow-sm">
+          <div className="ml-auto flex flex-wrap gap-1.5 rounded-2xl border border-sky-100 bg-sky-50/50 p-1.5 text-slate-700">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-sky-100 bg-white px-2.5 py-1.5 shadow-sm">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Start level
               </div>
-              <div className="text-xs font-medium text-slate-500">
+              <div className="text-[11px] font-medium text-slate-500">
                 {dayjs(startDate).format("DD-MMM-YYYY HH.mm")}
               </div>
-              <div className="text-base font-bold text-sky-800">
-                {startlevel}
-              </div>
+              <div className="text-sm font-bold text-sky-800">{startlevel}</div>
             </div>
-            <div className="flex flex-col items-center justify-center rounded-xl border border-sky-100 bg-white px-3 py-2 shadow-sm">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-sky-100 bg-white px-2.5 py-1.5 shadow-sm">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 End level
               </div>
-              <div className="text-xs font-medium text-slate-500">
+              <div className="text-[11px] font-medium text-slate-500">
                 {dayjs(endDate).format("DD-MMM-YYYY HH.mm")}
               </div>
-              <div className="text-base font-bold text-sky-800">{endlevel}</div>
+              <div className="text-sm font-bold text-sky-800">{endlevel}</div>
             </div>
-            <div className="flex flex-col justify-center rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+            <div className="flex flex-col justify-center rounded-xl border border-sky-100 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
               <div className="text-sky-800">{rate}</div>
               <div>Diff {diffWeightTon} TON</div>
               <div className="text-slate-500">
@@ -541,23 +582,17 @@ const TankTrend: React.FC = () => {
 
         {/* === Chart === */}
         {/* This container handles the height and horizontal scrolling */}
-        <div className="min-h-[520px] w-full flex-1 overflow-x-auto overflow-y-hidden rounded-3xl border border-sky-100 bg-white p-4 shadow-sm">
+        <div className="min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden rounded-3xl border border-sky-100 bg-white p-3 shadow-sm">
           {loading && (
             // Flex container to center the spinner
-            <div
-              className="flex justify-center items-center w-full h-full"
-              style={{ minHeight: "300px" }}
-            >
+            <div className="flex h-full w-full items-center justify-center">
               {/* This is the Tailwind spinner */}
               <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
             </div>
           )}
 
           {error && (
-            <div
-              className="flex justify-center items-center w-full h-full"
-              style={{ minHeight: "300px" }}
-            >
+            <div className="flex h-full w-full items-center justify-center">
               <p className="text-sm font-semibold text-red-600">
                 Error: {error}
               </p>
@@ -566,11 +601,14 @@ const TankTrend: React.FC = () => {
 
           {!loading && !error && data.length > 0 && (
             // This div sets the minimum width to enable scrolling
-            <div style={{ minWidth: "2000px", height: "500px" }}>
+            <div
+              className="h-full min-h-[320px]"
+              style={{ minWidth: "1600px" }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={data}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                  margin={{ top: 10, right: 20, left: 8, bottom: 30 }}
                 >
                   {/* ... rest of your chart ... */}
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
@@ -679,10 +717,7 @@ const TankTrend: React.FC = () => {
 
           {!loading && !error && data.length === 0 && (
             // Centered "No data" message
-            <div
-              className="flex justify-center items-center w-full h-full"
-              style={{ minHeight: "300px" }}
-            >
+            <div className="flex h-full w-full items-center justify-center">
               <p>No data available</p>
             </div>
           )}

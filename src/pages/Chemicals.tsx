@@ -655,7 +655,7 @@ const ChemicalPage: React.FC = () => {
 
     try {
       setLoading(true);
-      await pb.collection("chemical_usage").create(payload);
+      const createdRecord = await pb.collection("chemical_usage").create(payload);
       await fetchChemicalUsage();
       setOpen(false);
       setForm({
@@ -672,6 +672,9 @@ const ChemicalPage: React.FC = () => {
         title: "[Chemical Usage] Recorded",
         page: "chemical",
         message: `A new record for ${form.chemicalName} has been added.`,
+        action: "create",
+        collection: "chemical_usage",
+        record_id: createdRecord.id,
       });
       toast.success("Chemical usage record saved successfully");
     } catch (error) {
@@ -689,6 +692,15 @@ const ChemicalPage: React.FC = () => {
       setDeletingId(deleteTarget.id);
       await pb.collection("chemical_usage").update(deleteTarget.id, {
         isDeleted: true,
+      });
+
+      await sendNotif({
+        title: "[Chemical Usage] Deleted",
+        page: "chemical",
+        message: `${deleteTarget.chemical_name} usage record was deleted.`,
+        action: "soft_delete",
+        collection: "chemical_usage",
+        record_id: deleteTarget.id,
       });
 
       setChemicalUsage((current) =>
