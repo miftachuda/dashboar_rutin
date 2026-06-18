@@ -147,7 +147,13 @@ function compareTankNames(a: string, b: string) {
 }
 
 function normalizeTankKey(value: string) {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const match = normalized.match(/^(\d+T)(\d+)$/);
+
+  if (!match) return normalized;
+
+  const tankNumber = String(Number(match[2]));
+  return `${match[1]}${tankNumber}`;
 }
 
 function toSortableNumber(value: number | string | undefined) {
@@ -349,7 +355,9 @@ const LiveTankLevel: React.FC = () => {
   const [rateUnit, setRateUnit] = useState<RateUnit>("mm/hour");
   const [sortKey, setSortKey] = useState<SortKey>("tank");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [targetDialogTank, setTargetDialogTank] = useState<TankRow | null>(null);
+  const [targetDialogTank, setTargetDialogTank] = useState<TankRow | null>(
+    null,
+  );
   const [targetDraft, setTargetDraft] = useState({ low: "", high: "" });
   const [savingTarget, setSavingTarget] = useState(false);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -536,20 +544,23 @@ const LiveTankLevel: React.FC = () => {
       alert("Low target must be lower than high target.");
       return;
     }
-    if (Number.isFinite(tankHeight) && tankHeight > 0 && highTarget > tankHeight) {
+    if (
+      Number.isFinite(tankHeight) &&
+      tankHeight > 0 &&
+      highTarget > tankHeight
+    ) {
       alert("High target cannot be greater than tank height.");
       return;
     }
 
     try {
       setSavingTarget(true);
-      const updatedTank = await pb.collection("tank").update<TankRecord>(
-        targetDialogMetadata.id,
-        {
+      const updatedTank = await pb
+        .collection("tank")
+        .update<TankRecord>(targetDialogMetadata.id, {
           low_target: lowTarget,
           high_target: highTarget,
-        },
-      );
+        });
 
       setTankData((current) =>
         current.map((tank) =>
@@ -589,7 +600,14 @@ const LiveTankLevel: React.FC = () => {
           ...rowsByTank[normalizeTankKey(definition.tank)],
         }))
         .sort((a, b) =>
-          compareTankRows(a, b, sortKey, sortDirection, rateUnit, tankDataByKey),
+          compareTankRows(
+            a,
+            b,
+            sortKey,
+            sortDirection,
+            rateUnit,
+            tankDataByKey,
+          ),
         ),
     [rateUnit, rowsByTank, sortDirection, sortKey, tankDataByKey],
   );
@@ -622,7 +640,9 @@ const LiveTankLevel: React.FC = () => {
                 Rate Unit
                 <select
                   value={rateUnit}
-                  onChange={(event) => setRateUnit(event.target.value as RateUnit)}
+                  onChange={(event) =>
+                    setRateUnit(event.target.value as RateUnit)
+                  }
                   className="rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-bold text-sky-800 outline-none focus:ring-2 focus:ring-sky-300"
                 >
                   <option value="mm/hour">mm/hour</option>
@@ -643,14 +663,10 @@ const LiveTankLevel: React.FC = () => {
         <div className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
           <div className="border-b border-sky-100 px-4 py-4 sm:px-5">
             <h2 className="text-lg font-bold text-sky-950">Tank Level Table</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Latest row is retained per tank. Rate is shown when provided by
-              the realtime source.
-            </p>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-sky-100 text-left text-sm">
+            <table className="min-w-full divide-y divide-sky-100 text-left text-sm whitespace-nowrap">
               <thead className="bg-sky-50/80 text-xs uppercase tracking-wide text-sky-700">
                 <tr>
                   <th className="px-4 py-3 font-bold">No</th>
@@ -689,11 +705,13 @@ const LiveTankLevel: React.FC = () => {
                 ) : (
                   rows.map((row, index) => {
                     const hasData = Boolean(row.receivedAt);
-                    const ageMs = hasData ? now - (row.receivedAt ?? 0) : Infinity;
-                    const isFresh =
-                      hasData && ageMs < 5000;
+                    const ageMs = hasData
+                      ? now - (row.receivedAt ?? 0)
+                      : Infinity;
+                    const isFresh = hasData && ageMs < 5000;
                     const isStale10s = hasData && ageMs >= 10000;
-                    const tankMetadata = tankDataByKey[normalizeTankKey(row.tank)];
+                    const tankMetadata =
+                      tankDataByKey[normalizeTankKey(row.tank)];
                     const targetEta = getTargetEta(row, tankMetadata);
 
                     return (
@@ -746,7 +764,9 @@ const LiveTankLevel: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className={`px-4 py-3 font-bold ${targetEta.className}`}>
+                        <td
+                          className={`px-4 py-3 font-bold ${targetEta.className}`}
+                        >
                           {targetEta.text}
                         </td>
                         <td className="px-4 py-3">
@@ -767,7 +787,9 @@ const LiveTankLevel: React.FC = () => {
                           {tankMetadata ? (
                             <button
                               type="button"
-                              onClick={() => openTargetDialog(row, tankMetadata)}
+                              onClick={() =>
+                                openTargetDialog(row, tankMetadata)
+                              }
                               className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
                             >
                               <Settings className="h-3.5 w-3.5" /> Setting
@@ -838,7 +860,9 @@ const LiveTankLevel: React.FC = () => {
                         Tank Height Reference
                       </p>
                       <p className="mt-1 text-sm font-bold text-slate-700">
-                        {Number.isFinite(Number(targetDialogMetadata.tank_height))
+                        {Number.isFinite(
+                          Number(targetDialogMetadata.tank_height),
+                        )
                           ? `${formatNumber(Number(targetDialogMetadata.tank_height), 0)} mm`
                           : "N/A"}
                       </p>

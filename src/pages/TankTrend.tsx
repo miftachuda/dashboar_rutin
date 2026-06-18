@@ -38,7 +38,13 @@ interface TagOption {
 let lastDisplayedDay: string | null = null;
 
 function normalizeTankKey(value: string) {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const match = normalized.match(/^(\d+T)(\d+)$/);
+
+  if (!match) return normalized;
+
+  const tankNumber = String(Number(match[2]));
+  return `${match[1]}${tankNumber}`;
 }
 
 const tagOptions: TagOption[] = [

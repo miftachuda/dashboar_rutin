@@ -14,7 +14,7 @@ type NotificationRecord = {
 };
 
 function isToday(value: string) {
-  const date = new Date(value);
+  const date = parsePocketBaseDate(value);
   const now = new Date();
 
   return (
@@ -24,8 +24,12 @@ function isToday(value: string) {
   );
 }
 
+function parsePocketBaseDate(value: string) {
+  return new Date(value.replace(" ", "T").replace("Z", ""));
+}
+
 function formatTimeAgo(value: string) {
-  const date = new Date(value);
+  const date = parsePocketBaseDate(value);
   const diffSeconds = Math.max(
     0,
     Math.floor((Date.now() - date.getTime()) / 1000),
@@ -48,15 +52,19 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const hasTodayNotification = notifications.some((item) => isToday(item.created));
+  const hasTodayNotification = notifications.some((item) =>
+    isToday(item.created),
+  );
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const records = await pb.collection("notifications").getFullList<NotificationRecord>({
-        sort: "-created",
-        perPage: 20,
-      });
+      const records = await pb
+        .collection("notifications")
+        .getFullList<NotificationRecord>({
+          sort: "-created",
+          perPage: 20,
+        });
       setNotifications(records);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -121,9 +129,7 @@ export default function Header() {
                   <p className="text-sm font-extrabold text-sky-950">
                     Notifications
                   </p>
-                  <p className="text-xs text-slate-500">
-                    Latest PocketBase updates
-                  </p>
+                  <p className="text-xs text-slate-500">Latest Activity</p>
                 </div>
                 <button
                   type="button"
