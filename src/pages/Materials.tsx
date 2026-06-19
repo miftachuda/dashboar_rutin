@@ -120,8 +120,9 @@ const MaterialPage = () => {
   const [materials, setMaterials] = useState<ConsumableMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeSection, setActiveSection] =
-    useState<ConsumableMaterialSection>(consumableMaterialSections[0]);
+  const [activeSection, setActiveSection] = useState<ConsumableMaterialSection>(
+    consumableMaterialSections[0],
+  );
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(
     null,
   );
@@ -157,7 +158,7 @@ const MaterialPage = () => {
     return minimumStock > 0 && Number(item.stock ?? 0) <= minimumStock;
   }).length;
   const selectedMaterial = selectedMaterialId
-    ? materials.find((item) => item.id === selectedMaterialId) ?? null
+    ? (materials.find((item) => item.id === selectedMaterialId) ?? null)
     : null;
   const selectedStock = Number(selectedMaterial?.stock ?? 0);
   const addQuantity = parseStockInput(stockAddDraft);
@@ -165,7 +166,7 @@ const MaterialPage = () => {
   const previewNextStock =
     stockMode === "add"
       ? selectedStock + (addQuantity ?? 0)
-      : opnameStock ?? selectedStock;
+      : (opnameStock ?? selectedStock);
   const previewConsumption =
     stockMode === "opname" ? selectedStock - (opnameStock ?? selectedStock) : 0;
 
@@ -210,37 +211,40 @@ const MaterialPage = () => {
         };
       }, {});
 
-      const rates = Object.entries(logsByMaterial).reduce<Record<string, number>>(
-        (currentRates, [materialId, logs]) => {
-          const datedLogs = logs
-            .map((log) => ({
-              log,
-              createdDate: parseDateValue(log.created || log.updated),
-            }))
-            .filter(
-              (entry): entry is { log: ConsumableMaterialStockLog; createdDate: Date } =>
-                Boolean(entry.createdDate),
-            );
-
-          if (datedLogs.length === 0) return currentRates;
-
-          const totalConsumption = datedLogs.reduce(
-            (sum, entry) => sum + Number(entry.log.consumption ?? 0),
-            0,
-          );
-          const oldestDate = datedLogs[0].createdDate;
-          const daySpan = Math.min(
-            CONSUMPTION_RATE_DAYS,
-            Math.max(1, differenceInCalendarDays(new Date(), oldestDate) + 1),
+      const rates = Object.entries(logsByMaterial).reduce<
+        Record<string, number>
+      >((currentRates, [materialId, logs]) => {
+        const datedLogs = logs
+          .map((log) => ({
+            log,
+            createdDate: parseDateValue(log.created || log.updated),
+          }))
+          .filter(
+            (
+              entry,
+            ): entry is {
+              log: ConsumableMaterialStockLog;
+              createdDate: Date;
+            } => Boolean(entry.createdDate),
           );
 
-          return {
-            ...currentRates,
-            [materialId]: totalConsumption / daySpan,
-          };
-        },
-        {},
-      );
+        if (datedLogs.length === 0) return currentRates;
+
+        const totalConsumption = datedLogs.reduce(
+          (sum, entry) => sum + Number(entry.log.consumption ?? 0),
+          0,
+        );
+        const oldestDate = datedLogs[0].createdDate;
+        const daySpan = Math.min(
+          CONSUMPTION_RATE_DAYS,
+          Math.max(1, differenceInCalendarDays(new Date(), oldestDate) + 1),
+        );
+
+        return {
+          ...currentRates,
+          [materialId]: totalConsumption / daySpan,
+        };
+      }, {});
 
       setMaterialConsumptionRates(rates);
     } catch (fetchError) {
@@ -316,7 +320,8 @@ const MaterialPage = () => {
   };
 
   const closeStockPopup = () => {
-    if (savingStockTransaction || savingMinimumStock || deletingStockLogId) return;
+    if (savingStockTransaction || savingMinimumStock || deletingStockLogId)
+      return;
 
     setSelectedMaterialId(null);
     setDeleteStockLogTarget(null);
@@ -376,8 +381,7 @@ const MaterialPage = () => {
           material.id === selectedMaterial.id
             ? {
                 ...material,
-                minimum_stock:
-                  updatedItem.minimum_stock ?? nextMinimumStock,
+                minimum_stock: updatedItem.minimum_stock ?? nextMinimumStock,
                 updated: updatedItem.updated ?? material.updated,
               }
             : material,
@@ -456,15 +460,6 @@ const MaterialPage = () => {
         record_id: selectedMaterial.id,
       });
 
-      await sendNotif({
-        title: "[Material Stock Log] Created",
-        page: "material",
-        message: `Stock log created for ${selectedMaterial.material_name}.`,
-        action: "create",
-        collection: "consumable_material_stock_log",
-        record_id: createdLog.id,
-      });
-
       setMaterials((current) =>
         current.map((material) =>
           material.id === selectedMaterial.id
@@ -510,7 +505,9 @@ const MaterialPage = () => {
         : Number(deleteStockLogTarget.previous_stock ?? currentStock);
 
     if (!Number.isFinite(nextStock) || nextStock < 0) {
-      alert("Cannot delete this transaction because stock would become negative.");
+      alert(
+        "Cannot delete this transaction because stock would become negative.",
+      );
       return;
     }
 
@@ -703,7 +700,6 @@ const MaterialPage = () => {
                 stock items.
               </p>
             </div>
-
           </div>
 
           {loading ? (
@@ -798,8 +794,8 @@ const MaterialPage = () => {
                                   !hasStockMovement
                                     ? "text-slate-400"
                                     : isStockIncrement
-                                    ? "text-emerald-600"
-                                    : "text-red-600"
+                                      ? "text-emerald-600"
+                                      : "text-red-600"
                                 }`}
                               >
                                 {hasStockMovement && (
@@ -1096,7 +1092,8 @@ const MaterialPage = () => {
                         Consumption
                       </p>
                       <p className="mt-1 font-bold text-amber-700">
-                        {formatNumber(previewConsumption)} {selectedMaterial.unit}
+                        {formatNumber(previewConsumption)}{" "}
+                        {selectedMaterial.unit}
                       </p>
                     </div>
                   </>
@@ -1208,7 +1205,9 @@ const MaterialPage = () => {
                             <button
                               type="button"
                               onClick={() => setDeleteStockLogTarget(log)}
-                              disabled={!canDelete || Boolean(deletingStockLogId)}
+                              disabled={
+                                !canDelete || Boolean(deletingStockLogId)
+                              }
                               className={`mt-2 inline-flex items-center gap-1 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
                                 canDelete
                                   ? "border-red-100 bg-red-50 text-red-600 hover:bg-red-100"
@@ -1292,7 +1291,8 @@ const MaterialPage = () => {
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
                   This will mark the transaction as deleted and recalculate the
-                  current stock for {selectedMaterial.material_name || "this material"}.
+                  current stock for{" "}
+                  {selectedMaterial.material_name || "this material"}.
                 </p>
               </div>
             </div>
@@ -1304,12 +1304,16 @@ const MaterialPage = () => {
                   : "Stock Opname"}
               </p>
               <p className="mt-1 text-slate-600">
-                {formatNumber(deleteStockLogTarget.previous_stock)} {deleteStockLogTarget.unit}
+                {formatNumber(deleteStockLogTarget.previous_stock)}{" "}
+                {deleteStockLogTarget.unit}
                 {" -> "}
-                {formatNumber(deleteStockLogTarget.next_stock)} {deleteStockLogTarget.unit}
+                {formatNumber(deleteStockLogTarget.next_stock)}{" "}
+                {deleteStockLogTarget.unit}
               </p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
-                {formatDateTime(deleteStockLogTarget.created || deleteStockLogTarget.updated)}
+                {formatDateTime(
+                  deleteStockLogTarget.created || deleteStockLogTarget.updated,
+                )}
               </p>
             </div>
 

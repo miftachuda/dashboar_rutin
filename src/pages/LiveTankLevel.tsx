@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Radio, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import DashboardLayout from "@/components/MainLayout";
 import { pb } from "@/lib/pocketbase";
 import { sendNotif } from "@/lib/sendnotif";
@@ -27,6 +28,25 @@ type TankUpdateMessage = {
   };
 };
 
+type TankHistoryResponse = {
+  type?: string;
+  duration_seconds?: number;
+  interval_seconds?: number;
+  count?: number;
+  data?: Array<{
+    timestamp?: number | string;
+    tanks?: Record<
+      string,
+      {
+        level?: number | string;
+        temp?: number | string;
+        timestamp?: number | string;
+        rate?: number | string;
+      }
+    >;
+  }>;
+};
+
 type TankRow = {
   tank: string;
   name: string;
@@ -42,6 +62,11 @@ type TankDefinition = {
   name: string;
 };
 
+type TankHistoryPoint = {
+  receivedAt: number;
+  level: number;
+};
+
 type TankRecord = {
   id: string;
   tank_name: string;
@@ -54,9 +79,11 @@ type TankRecord = {
 
 type SortKey = "tank" | "name" | "level" | "temp" | "rate";
 type SortDirection = "asc" | "desc";
-type RateUnit = "mm/hour" | "m3/hour" | "T/D";
+type RateUnit = "mm/h" | "m3/h" | "T/D";
 
 const wsUrl = "wss://tank.loc-2.com/ws";
+const historyUrl = "https://tank.loc-2.com/history";
+const trendWindowMs = 12 * 60 * 1000;
 
 const predefinedTankList: TankDefinition[] = [
   { tank: "41T-101", name: "HVI-95" },
@@ -245,7 +272,7 @@ function getConvertedRateValue(
   unit: RateUnit,
 ) {
   if (rateMmPerHour == null) return undefined;
-  if (unit === "mm/hour") return rateMmPerHour;
+  if (unit === "mm/h") return rateMmPerHour;
   if (!hasValidTankMetadata(tank)) return null;
 
   const tankDiameter = Number(tank?.tank_dia);
@@ -254,7 +281,7 @@ function getConvertedRateValue(
   const areaM2 = Math.PI * Math.pow(radiusM, 2);
   const rateM3PerHour = areaM2 * (rateMmPerHour / 1000);
 
-  if (unit === "m3/hour") return rateM3PerHour;
+  if (unit === "m3/h") return rateM3PerHour;
   return rateM3PerHour * specificGravity * 24;
 }
 
@@ -267,9 +294,9 @@ function formatRate(
 
   if (convertedRate === undefined) return "-";
   if (convertedRate === null) return "N/A";
-  if (unit === "m3/hour") return `${formatNumber(convertedRate, 1)} m³/hour`;
+  if (unit === "m3/h") return `${formatNumber(convertedRate, 1)} m³/h`;
   if (unit === "T/D") return `${formatNumber(convertedRate, 1)} T/D`;
-  return `${formatNumber(convertedRate, 1)} mm/hour`;
+  return `${formatNumber(convertedRate, 1)} mm/h`;
 }
 
 function calculateWeightTon(levelMm: number | undefined, tank?: TankRecord) {
@@ -344,15 +371,45 @@ function getTargetEta(row: TankRow, tank?: TankRecord) {
   };
 }
 
+function RowTrend({ data }: { data: TankHistoryPoint[] }) {
+  if (data.length < 2) {
+    return <span className="text-xs font-semibold text-slate-400">-</span>;
+  }
+
+  return (
+    <div className="h-8 w-24 rounded-lg border border-sky-100 bg-sky-50/40 px-1.5 py-1">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{ top: 3, right: 2, bottom: 3, left: 2 }}
+        >
+          <YAxis dataKey="level" domain={["dataMin", "dataMax"]} hide />
+          <Line
+            type="monotone"
+            dataKey="level"
+            stroke="#0ea5e9"
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 const LiveTankLevel: React.FC = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [rowsByTank, setRowsByTank] = useState<Record<string, TankRow>>({});
+  const [tankHistoryByKey, setTankHistoryByKey] = useState<
+    Record<string, TankHistoryPoint[]>
+  >({});
   const [lastMessageAt, setLastMessageAt] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [now, setNow] = useState(Date.now());
   const [tankData, setTankData] = useState<TankRecord[]>([]);
-  const [rateUnit, setRateUnit] = useState<RateUnit>("mm/hour");
+  const [rateUnit, setRateUnit] = useState<RateUnit>("mm/h");
   const [sortKey, setSortKey] = useState<SortKey>("tank");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [targetDialogTank, setTargetDialogTank] = useState<TankRow | null>(
@@ -406,6 +463,135 @@ const LiveTankLevel: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadHistory = async () => {
+      try {
+        const res = await fetch(historyUrl);
+        if (!res.ok) throw new Error(`history fetch failed: ${res.status}`);
+        const json: TankHistoryResponse = await res.json();
+        if (cancelled || !json.data?.length) return;
+
+        const points: Array<{
+          tankKey: string;
+          receivedAt: number;
+          level: number;
+          temp: number | string;
+          rate: number | undefined;
+          timestamp: number;
+        }> = [];
+
+        for (const sample of json.data) {
+          const ts = Number(sample.timestamp) * 1000;
+          if (!Number.isFinite(ts)) continue;
+
+          for (const [tankKey, tankInfo] of Object.entries(sample.tanks ?? {})) {
+            const nKey = normalizeTankKey(tankKey);
+            const level = Number(tankInfo.level);
+            if (!Number.isFinite(level)) continue;
+
+            points.push({
+              tankKey: nKey,
+              receivedAt: ts,
+              level,
+              temp: tankInfo.temp ?? "-",
+              rate: Number.isFinite(Number(tankInfo.rate))
+                ? Number(tankInfo.rate)
+                : undefined,
+              timestamp: Number(sample.timestamp),
+            });
+          }
+        }
+
+        if (cancelled) return;
+
+        const initialHistory: Record<string, TankHistoryPoint[]> = {};
+        const initialRows: Record<string, TankRow> = {};
+        const latestByTank: Record<
+          string,
+          {
+            receivedAt: number;
+            level: number;
+            temp: number | string;
+            rate: number | undefined;
+            timestamp: number;
+          }
+        > = {};
+
+        for (const p of points) {
+          if (!initialHistory[p.tankKey]) {
+            initialHistory[p.tankKey] = [];
+          }
+          initialHistory[p.tankKey].push({
+            receivedAt: p.receivedAt,
+            level: p.level,
+          });
+
+          if (
+            !latestByTank[p.tankKey] ||
+            p.timestamp > latestByTank[p.tankKey].timestamp
+          ) {
+            latestByTank[p.tankKey] = {
+              receivedAt: p.receivedAt,
+              level: p.level,
+              temp: p.temp,
+              rate: p.rate,
+              timestamp: p.timestamp,
+            };
+          }
+        }
+
+        if (cancelled) return;
+
+        for (const [tk, info] of Object.entries(latestByTank)) {
+          const def = predefinedTankList.find(
+            (d) => normalizeTankKey(d.tank) === tk,
+          );
+          initialRows[tk] = {
+            tank: def?.tank ?? tk,
+            name: def?.name ?? tk,
+            level: info.level,
+            temp: info.temp,
+            timestamp: info.timestamp,
+            rateMmPerHour: info.rate,
+            receivedAt: info.receivedAt,
+          };
+        }
+
+        if (cancelled) return;
+
+        setTankHistoryByKey((current) => {
+          const merged: Record<string, TankHistoryPoint[]> = { ...current };
+          for (const [tk, hist] of Object.entries(initialHistory)) {
+            merged[tk] = [...(merged[tk] ?? []), ...hist].sort(
+              (a, b) => a.receivedAt - b.receivedAt,
+            );
+          }
+          return merged;
+        });
+
+        setRowsByTank((current) => {
+          const merged = { ...current };
+          for (const [tk, row] of Object.entries(initialRows)) {
+            if (!merged[tk] || !merged[tk]!.receivedAt) {
+              merged[tk] = row;
+            }
+          }
+          return merged;
+        });
+      } catch (err) {
+        console.error("Error loading tank history:", err);
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     shouldReconnect.current = true;
 
     const processMessage = (message: TankUpdateMessage) => {
@@ -425,6 +611,17 @@ const LiveTankLevel: React.FC = () => {
 
       const receivedAt = Date.now();
       setLastMessageAt(receivedAt);
+      setTankHistoryByKey((current) => {
+        const nextHistory = [
+          ...(current[tankKey] ?? []),
+          { receivedAt, level },
+        ].filter((point) => point.receivedAt >= receivedAt - trendWindowMs);
+
+        return {
+          ...current,
+          [tankKey]: nextHistory,
+        };
+      });
       setRowsByTank((current) => {
         const tankDefinition = predefinedTankList.find(
           (item) => normalizeTankKey(item.tank) === tankKey,
@@ -645,8 +842,8 @@ const LiveTankLevel: React.FC = () => {
                   }
                   className="rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-bold text-sky-800 outline-none focus:ring-2 focus:ring-sky-300"
                 >
-                  <option value="mm/hour">mm/hour</option>
-                  <option value="m3/hour">m³/hour</option>
+                  <option value="mm/h">mm/h</option>
+                  <option value="m3/h">m³/h</option>
                   <option value="T/D">T/D</option>
                 </select>
               </label>
@@ -666,37 +863,38 @@ const LiveTankLevel: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-sky-100 text-left text-sm whitespace-nowrap">
+            <table className="w-full table-auto divide-y divide-sky-100 text-left text-xs whitespace-nowrap">
               <thead className="bg-sky-50/80 text-xs uppercase tracking-wide text-sky-700">
                 <tr>
-                  <th className="px-4 py-3 font-bold">No</th>
-                  <th className="px-4 py-3 font-bold">
+                  <th className="px-2 py-2 font-bold">No</th>
+                  <th className="px-2 py-2 font-bold">
                     {renderSortableHeader("Tank", "tank")}
                   </th>
-                  <th className="px-4 py-3 font-bold">
-                    {renderSortableHeader("Tank Name", "name")}
+                  <th className="px-2 py-2 font-bold">
+                    {renderSortableHeader("Service", "name")}
                   </th>
-                  <th className="px-4 py-3 font-bold">
+                  <th className="px-2 py-2 font-bold">
                     {renderSortableHeader("Level", "level")}
                   </th>
-                  <th className="px-4 py-3 font-bold">Weight</th>
-                  <th className="px-4 py-3 font-bold">
-                    {renderSortableHeader("Temperature", "temp")}
+                  <th className="px-2 py-2 font-bold">Weight</th>
+                  <th className="px-2 py-2 font-bold">
+                    {renderSortableHeader("Tempe", "temp")}
                   </th>
-                  <th className="px-4 py-3 font-bold">
+                  <th className="px-2 py-2 font-bold">
                     {renderSortableHeader("Rate", "rate")}
                   </th>
-                  <th className="px-4 py-3 font-bold">ETA Target</th>
-                  <th className="px-4 py-3 font-bold">Status</th>
-                  <th className="px-4 py-3 font-bold">Setting</th>
-                  <th className="px-4 py-3 font-bold">Trend</th>
+                  <th className="px-2 py-2 font-bold">ETA</th>
+                  <th className="px-2 py-2 font-bold">Trend</th>
+                  <th className="px-2 py-2 font-bold">Sta</th>
+                  <th className="px-2 py-2 font-bold">Set</th>
+                  <th className="px-2 py-2 font-bold">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-sky-50">
                 {rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={11}
+                      colSpan={12}
                       className="px-4 py-10 text-center text-slate-500"
                     >
                       Waiting for tank data...
@@ -713,6 +911,8 @@ const LiveTankLevel: React.FC = () => {
                     const tankMetadata =
                       tankDataByKey[normalizeTankKey(row.tank)];
                     const targetEta = getTargetEta(row, tankMetadata);
+                    const tankHistory =
+                      tankHistoryByKey[normalizeTankKey(row.tank)] ?? [];
 
                     return (
                       <tr
@@ -723,28 +923,28 @@ const LiveTankLevel: React.FC = () => {
                             : "hover:bg-sky-50/50"
                         }`}
                       >
-                        <td className="px-4 py-3 font-semibold text-slate-500">
+                        <td className="px-2 py-2 font-semibold text-slate-500">
                           {index + 1}
                         </td>
-                        <td className="px-4 py-3 font-extrabold text-sky-950">
+                        <td className="px-2 py-2 font-extrabold text-sky-950">
                           {row.tank}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">
+                        <td className="px-2 py-2 font-semibold text-slate-700">
                           {row.name}
                         </td>
-                        <td className="px-4 py-3 font-bold text-sky-700">
+                        <td className="px-2 py-2 font-bold text-sky-700">
                           {row.level == null
                             ? "-"
                             : `${formatNumber(row.level, 0)} mm`}
                         </td>
-                        <td className="px-4 py-3 font-bold text-indigo-700">
+                        <td className="px-2 py-2 font-bold text-indigo-700">
                           {calculateWeightTon(row.level, tankMetadata)}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">
+                        <td className="px-2 py-2 font-semibold text-slate-700">
                           {row.temp == null ? "-" : `${row.temp} °C`}
                         </td>
                         <td
-                          className={`px-4 py-3 font-bold ${getRateClass(row.rateMmPerHour)}`}
+                          className={`px-2 py-2 font-bold ${getRateClass(row.rateMmPerHour)}`}
                         >
                           {row.rateMmPerHour == null ? (
                             "-"
@@ -765,11 +965,14 @@ const LiveTankLevel: React.FC = () => {
                           )}
                         </td>
                         <td
-                          className={`px-4 py-3 font-bold ${targetEta.className}`}
+                          className={`px-2 py-2 font-bold ${targetEta.className}`}
                         >
                           {targetEta.text}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-2">
+                          <RowTrend data={tankHistory} />
+                        </td>
+                        <td className="px-2 py-2">
                           <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-500">
                             <span
                               className={`h-3 w-3 rounded-full animate-pulse ${
@@ -783,16 +986,17 @@ const LiveTankLevel: React.FC = () => {
                             {!hasData ? "No data" : ""}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-2">
                           {tankMetadata ? (
                             <button
                               type="button"
                               onClick={() =>
                                 openTargetDialog(row, tankMetadata)
                               }
-                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
+                              aria-label={`Set target for ${row.tank}`}
                             >
-                              <Settings className="h-3.5 w-3.5" /> Setting
+                              <Settings className="h-3.5 w-3.5" />
                             </button>
                           ) : (
                             <span className="text-xs font-semibold text-slate-400">
@@ -800,7 +1004,7 @@ const LiveTankLevel: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-2">
                           <button
                             type="button"
                             onClick={() =>
@@ -808,9 +1012,9 @@ const LiveTankLevel: React.FC = () => {
                                 `/tank-trend?tank=${encodeURIComponent(row.tank)}`,
                               )
                             }
-                            className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-100"
+                            className="rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-bold text-sky-700 transition-colors hover:bg-sky-100"
                           >
-                            View Trend
+                            Trend
                           </button>
                         </td>
                       </tr>

@@ -373,7 +373,8 @@ const TankTrend: React.FC = () => {
     fetchTank();
   }, []);
   const selected_tank_data = tankData.find(
-    (tank) => tank.tank_name === selectedTag.label,
+    (tank) =>
+      normalizeTankKey(tank.tank_name) === normalizeTankKey(selectedTag.label),
   );
   const result = getRateFromLast15Min(data);
 
@@ -401,13 +402,18 @@ const TankTrend: React.FC = () => {
     const volume_m3 = calculateVolumeCubic(level_mm);
     if (volume_m3 === "N/A") return "N/A";
     const volume_m3_num = parseFloat(volume_m3); // convert to number
+    const specificGravity = Number(selected_tank_data?.sg || 1);
+    if (!Number.isFinite(volume_m3_num) || !Number.isFinite(specificGravity)) {
+      return "N/A";
+    }
     const weight_kg =
-      volume_m3_num * Number(selected_tank_data?.sg || 1) * 1000; // density of water approx 1000 kg/m³
+      volume_m3_num * specificGravity * 1000; // density of water approx 1000 kg/m³
     return weight_kg.toFixed(2);
   }
-  const diffWeightTon =
-    (Math.round(Number(calculateWeight(endlevel - startlevel)) / 1000) * 100) /
-    100;
+  const diffWeightKg = Number(calculateWeight(endlevel - startlevel));
+  const diffWeightTon = Number.isFinite(diffWeightKg)
+    ? `${Math.round((diffWeightKg / 1000) * 100) / 100} TON`
+    : "N/A";
   return (
     <DashboardLayout>
       <div className="flex h-full min-h-0 w-full flex-col gap-2 overflow-hidden p-2 text-slate-900 sm:p-3">
@@ -578,7 +584,7 @@ const TankTrend: React.FC = () => {
             </div>
             <div className="flex flex-col justify-center rounded-xl border border-sky-100 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
               <div className="text-sky-800">{rate}</div>
-              <div>Diff {diffWeightTon} TON</div>
+              <div>Diff {diffWeightTon}</div>
               <div className="text-slate-500">
                 {selected_tank_data?.high_target}
               </div>

@@ -165,11 +165,13 @@ export default function Header() {
                             <p className="mt-1 text-xs leading-5 text-slate-600">
                               {item.message || "-"}
                             </p>
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                            <div className="mt-2 flex flex-wrap items-center gap-2 pr-16 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                               {item.page && <span>{item.page}</span>}
                               {item.action && <span>{item.action}</span>}
-                              <span>{formatTimeAgo(item.created)}</span>
                             </div>
+                            <span className="absolute bottom-3 right-3 text-[10px] italic text-slate-400">
+                              {formatTimeAgo(item.created)}
+                            </span>
                           </div>
                         </div>
                       );
