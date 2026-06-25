@@ -82,7 +82,7 @@ type SortDirection = "asc" | "desc";
 type RateUnit = "mm/h" | "m3/h" | "T/D";
 
 const wsUrl = "wss://tank.loc-2.com/ws";
-const historyUrl = "https://tank.loc-2.com/history";
+const historyUrl = "http://tank.loc-2.com/history";
 const trendWindowMs = 12 * 60 * 1000;
 
 const predefinedTankList: TankDefinition[] = [
@@ -485,7 +485,9 @@ const LiveTankLevel: React.FC = () => {
           const ts = Number(sample.timestamp) * 1000;
           if (!Number.isFinite(ts)) continue;
 
-          for (const [tankKey, tankInfo] of Object.entries(sample.tanks ?? {})) {
+          for (const [tankKey, tankInfo] of Object.entries(
+            sample.tanks ?? {},
+          )) {
             const nKey = normalizeTankKey(tankKey);
             const level = Number(tankInfo.level);
             if (!Number.isFinite(level)) continue;

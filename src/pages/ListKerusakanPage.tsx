@@ -179,16 +179,18 @@ const ListKerusakanPage: React.FC = () => {
       const keyword = normalizeSearchText(searchQuery);
       if (!keyword) return true;
 
-      const searchableText = normalizeSearchText([
-        item.judul,
-        item.issue,
-        item.discipline,
-        item.type,
-        item.unit,
-        item.tag_name,
-        item.reference,
-        item.waktu_pelaksanaan,
-      ].join(" "));
+      const searchableText = normalizeSearchText(
+        [
+          item.judul,
+          item.issue,
+          item.discipline,
+          item.type,
+          item.unit,
+          item.tag_name,
+          item.reference,
+          item.waktu_pelaksanaan,
+        ].join(" "),
+      );
 
       return searchableText.includes(keyword);
     })
@@ -202,11 +204,15 @@ const ListKerusakanPage: React.FC = () => {
       }
 
       if (sortOption === "-updated") {
-        return new Date(right.updated).getTime() - new Date(left.updated).getTime();
+        return (
+          new Date(right.updated).getTime() - new Date(left.updated).getTime()
+        );
       }
 
       if (sortOption === "updated") {
-        return new Date(left.updated).getTime() - new Date(right.updated).getTime();
+        return (
+          new Date(left.updated).getTime() - new Date(right.updated).getTime()
+        );
       }
 
       return 0;
@@ -469,7 +475,7 @@ const ListKerusakanPage: React.FC = () => {
               % Complete
             </p>
             <div className="mt-3 flex items-end gap-2">
-                <span className="text-3xl font-bold leading-none sm:text-4xl">
+              <span className="text-3xl font-bold leading-none sm:text-4xl">
                 {completedMaintenanceCount}
               </span>
               <span className="pb-1 text-sm font-semibold text-sky-100">
@@ -490,7 +496,7 @@ const ListKerusakanPage: React.FC = () => {
                 {item.count}
               </p>
               <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Maintenance Items
+                Items
               </p>
             </div>
           ))}
@@ -729,7 +735,9 @@ const ListKerusakanPage: React.FC = () => {
                   {option.label}
                   <span
                     className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
-                      active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-500"
                     }`}
                   >
                     {option.count}

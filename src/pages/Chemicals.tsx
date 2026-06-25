@@ -9,7 +9,13 @@ import {
   startOfWeek,
   startOfYear,
 } from "date-fns";
-import { Calculator, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  Calculator,
+  FileSpreadsheet,
+  Loader2,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/MainLayout";
 import DashboardPerformance from "@/components/chemical_usage/chart";
@@ -435,7 +441,9 @@ const ChemicalPage: React.FC = () => {
     const startLevel = Number(item.propane_start_level);
     const endLevel = Number(item.propane_end_level);
     const calculatedVolumeM3 =
-      item.propane_tank && Number.isFinite(startLevel) && Number.isFinite(endLevel)
+      item.propane_tank &&
+      Number.isFinite(startLevel) &&
+      Number.isFinite(endLevel)
         ? getVolumeDifference(startLevel, endLevel, item.propane_tank)
         : null;
 
@@ -443,7 +451,7 @@ const ChemicalPage: React.FC = () => {
       ...item,
       amount: Number.isFinite(storedVolumeM3)
         ? storedVolumeM3
-        : calculatedVolumeM3 ?? 0,
+        : (calculatedVolumeM3 ?? 0),
       unit: "m³",
     };
   });
@@ -548,7 +556,8 @@ const ChemicalPage: React.FC = () => {
             No: index + 1,
             Date: format(new Date(item.time * 1000), "dd MMM yyyy, HH:mm"),
             Chemical: item.chemical_name,
-            Vessel: item.chemical_name === "Propane" ? item.propane_tank || "" : "",
+            Vessel:
+              item.chemical_name === "Propane" ? item.propane_tank || "" : "",
             "Start Level (%)": item.propane_start_level ?? "",
             "End Level (%)": item.propane_end_level ?? "",
             "Delta Level (%)":
@@ -592,7 +601,11 @@ const ChemicalPage: React.FC = () => {
     const isPropane = form.chemicalName === "Propane";
     const isPropanePercent = isPropane && form.unit === "% Vessel";
 
-    if (!form.chemicalName || !form.unit || (!isPropanePercent && !form.amount)) {
+    if (
+      !form.chemicalName ||
+      !form.unit ||
+      (!isPropanePercent && !form.amount)
+    ) {
       alert("Please fill all required fields");
       return;
     }
@@ -605,7 +618,11 @@ const ChemicalPage: React.FC = () => {
     const propaneStartLevel = Number(form.propaneStartLevel);
     const propaneEndLevel = Number(form.propaneEndLevel);
     const propaneVolumeM3 = isPropanePercent
-      ? getVolumeDifference(propaneStartLevel, propaneEndLevel, form.propaneTank)
+      ? getVolumeDifference(
+          propaneStartLevel,
+          propaneEndLevel,
+          form.propaneTank,
+        )
       : null;
 
     if (
@@ -655,7 +672,9 @@ const ChemicalPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const createdRecord = await pb.collection("chemical_usage").create(payload);
+      const createdRecord = await pb
+        .collection("chemical_usage")
+        .create(payload);
       await fetchChemicalUsage();
       setOpen(false);
       setForm({
@@ -727,7 +746,9 @@ const ChemicalPage: React.FC = () => {
   const formPropaneEndLevel = Number(form.propaneEndLevel);
   const formPropaneDeltaLevel = formPropaneEndLevel - formPropaneStartLevel;
   const isPropaneEndLevelOverLimit =
-    isPropanePercentForm && Number.isFinite(formPropaneEndLevel) && formPropaneEndLevel > 70;
+    isPropanePercentForm &&
+    Number.isFinite(formPropaneEndLevel) &&
+    formPropaneEndLevel > 70;
   const formPropaneVolumeM3 =
     isPropanePercentForm && form.propaneStartLevel && form.propaneEndLevel
       ? getVolumeDifference(
@@ -832,9 +853,7 @@ const ChemicalPage: React.FC = () => {
               <h2 className="text-lg font-bold text-sky-950">
                 Vessel Level Overview
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Live vessel level from PHD with inventory conversion.
-              </p>
+              <p className="mt-1 text-sm text-slate-500">Live Inventory</p>
             </div>
             <Button
               type="button"
@@ -1196,10 +1215,17 @@ const ChemicalPage: React.FC = () => {
                     </div>
                     <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-700">
                       <p className="font-semibold">
-                        Delta Level: {Number.isFinite(formPropaneDeltaLevel) ? formPropaneDeltaLevel.toFixed(2) : "-"}%
+                        Delta Level:{" "}
+                        {Number.isFinite(formPropaneDeltaLevel)
+                          ? formPropaneDeltaLevel.toFixed(2)
+                          : "-"}
+                        %
                       </p>
                       <p className="mt-1 font-bold">
-                        Calculated Volume: {formPropaneVolumeM3 != null ? `${formPropaneVolumeM3.toFixed(2)} m³` : "-"}
+                        Calculated Volume:{" "}
+                        {formPropaneVolumeM3 != null
+                          ? `${formPropaneVolumeM3.toFixed(2)} m³`
+                          : "-"}
                       </p>
                     </div>
                   </div>
