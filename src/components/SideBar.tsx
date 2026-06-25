@@ -8,12 +8,44 @@ import {
   Folder,
   Settings,
   ChevronRight,
-  ExternalLink,
   FlaskConical,
   Activity,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
+
+function Pitstop2027Icon({ size = 18 }: { size?: number }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-md border border-current text-[10px] font-bold leading-none"
+      style={{ width: size, height: size }}
+    >
+      27
+    </span>
+  );
+}
+
+function Pitstop2026Icon({ size = 18 }: { size?: number }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-md border border-current text-[10px] font-bold leading-none"
+      style={{ width: size, height: size }}
+    >
+      26
+    </span>
+  );
+}
+
+function TurnAround2028Icon({ size = 18 }: { size?: number }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-md border border-current text-[10px] font-bold leading-none"
+      style={{ width: size, height: size }}
+    >
+      28
+    </span>
+  );
+}
 
 export default function Sidebar({
   collapsed,
@@ -68,12 +100,24 @@ export default function Sidebar({
       ],
     },
     {
-      section: "EXTERNAL LINK",
+      section: "OVERHAUL",
       items: [
         {
-          name: "PITSTOP",
-          url: "https://pitstop.miftachuda.my.id",
-          icon: ExternalLink,
+          name: "Pitstop 2026",
+          path: "/pitstop-2026",
+          icon: Pitstop2026Icon,
+          badge: null,
+        },
+        {
+          name: "Pitstop 2027",
+          path: "/pitstop-2027",
+          icon: Pitstop2027Icon,
+          badge: null,
+        },
+        {
+          name: "Turn Around 2028",
+          path: "/turn-around-2028",
+          icon: TurnAround2028Icon,
           badge: null,
         },
       ],
@@ -122,7 +166,6 @@ export default function Sidebar({
         overflow-visible
       `}
     >
-      {/* Toggle */}
       <div className="relative overflow-visible">
         <button
           onClick={() => setCollapsed(!collapsed)}
