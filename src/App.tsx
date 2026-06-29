@@ -13,7 +13,7 @@ import TankTrend from "./pages/TankTrend.tsx";
 import Lims from "./pages/Lims.tsx";
 import LiveTankLevel from "./pages/LiveTankLevel.tsx";
 import Pitstop2026 from "./pages/Pitstop2026.tsx";
-import Pitstop2027 from "./pages/Pitstop2027.tsx";
+import Pitstop2027 from "./pages/pitstop2027/Pitstop2027.tsx";
 import TurnAround2028 from "./pages/TurnAround2028.tsx";
 
 const queryClient = new QueryClient();
