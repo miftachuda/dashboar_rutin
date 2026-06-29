@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-
 import {
   equipmentTypes,
   StepGroup,
@@ -9,11 +8,9 @@ import {
 import { StepProgress } from "@/components/StepProgress";
 import { StatsBar } from "@/components/StatsBar";
 import { pb } from "@/lib/pocketbase";
-
 import { toast } from "sonner";
 import { StatsBar2 } from "@/components/StatsBar2";
 import Highlight from "@/components/Highlight";
-
 import DashboardLayout from "@/components/MainLayout";
 
 const MainPage = () => {
@@ -21,7 +18,6 @@ const MainPage = () => {
   const [search, setSearch] = useState("");
   const [prefixFilter, setPrefixFilter] = useState<string | null>(null);
   const [selectedType, setselectedType] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(true);
   const cycleStatus = (current: StepStatus): StepStatus => {
     if (current === "not yet") return "in-progress";
@@ -278,8 +274,6 @@ const MainPage = () => {
       border: "border-yellow-300",
       accent: "text-yellow-600",
     },
-
-    // ✅ Added ones
     "024": {
       bg: "bg-purple-100",
       text: "text-purple-800",
@@ -321,7 +315,6 @@ const MainPage = () => {
               <Highlight />
             </div>
           )}
-
           <div className="mt-4 mb-6">
             <input
               type="text"

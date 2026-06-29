@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { StatsBar } from "@/components/StatsBar";
 import { StatsBar2 } from "@/components/StatsBar2";
+import Highlight from "@/components/Highlight";
 import { pb } from "@/lib/pocketbase";
 import {
   EquipmentType,
@@ -90,6 +91,7 @@ export default function Progress() {
     <div className="flex flex-col gap-0">
       <StatsBar tasks={tasks} />
       <StatsBar2 tasks={tasks} />
+      <Highlight />
     </div>
   );
 }

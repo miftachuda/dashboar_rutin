@@ -16,7 +16,11 @@ const tabs = [
     Component: AdditionalsJoblist,
   },
   { value: "restroke-cv", label: "Restroke CV", Component: RestrokeCV },
-  { value: "daily-activity", label: "Daily ActiviTy", Component: DailyActivity },
+  {
+    value: "daily-activity",
+    label: "Daily Activity",
+    Component: DailyActivity,
+  },
   {
     value: "cleaning-strainer",
     label: "Cleaning Strainer",
@@ -27,9 +31,15 @@ const tabs = [
 export default function Pitstop2027() {
   return (
     <DashboardLayout>
-      <Tabs.Root defaultValue="progress" className="flex h-full flex-col bg-slate-50">
+      <Tabs.Root
+        defaultValue="progress"
+        className="flex h-full flex-col bg-slate-50"
+      >
         <div className="border-b border-sky-100 bg-white px-4 py-3 shadow-sm sm:px-6">
-          <Tabs.List className="flex gap-2 overflow-x-auto whitespace-nowrap" aria-label="Pitstop 2027 menu">
+          <Tabs.List
+            className="flex gap-2 overflow-x-auto whitespace-nowrap"
+            aria-label="Pitstop 2027 menu"
+          >
             {tabs.map(({ value, label }) => (
               <Tabs.Trigger
                 key={value}
@@ -44,7 +54,11 @@ export default function Pitstop2027() {
 
         <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-6">
           {tabs.map(({ value, Component }) => (
-            <Tabs.Content key={value} value={value} className="h-full outline-none">
+            <Tabs.Content
+              key={value}
+              value={value}
+              className="h-full outline-none"
+            >
               <Component />
             </Tabs.Content>
           ))}
