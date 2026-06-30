@@ -43,7 +43,7 @@ const statusColor: Record<HighlightItem["status"], string> = {
   done: "bg-green-100 text-green-700",
 };
 
-export default function Highlight() {
+export default function Highlight({ collectionName = "highlight_pitstop_2027" }: { collectionName?: string }) {
   const [highlights, setHighlights] = useState<HighlightItem[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -66,7 +66,7 @@ export default function Highlight() {
 
   const deleteHighlight = async (highlightId: string) => {
     try {
-      await pb.collection("highlight_pitstop_2027").update(highlightId, {
+      await pb.collection(collectionName).update(highlightId, {
         is_deleted: true,
       });
       setHighlights((prev) => prev.filter((item) => item.id !== highlightId));
@@ -113,9 +113,9 @@ export default function Highlight() {
     });
 
     try {
-      await pb.collection("highlight_pitstop_2027").update(taskId, formData);
+      await pb.collection(collectionName).update(taskId, formData);
 
-      const updated = await pb.collection("highlight_pitstop_2027").getOne(taskId);
+      const updated = await pb.collection(collectionName).getOne(taskId);
 
       setHighlights((prev) =>
         prev.map((item) =>
@@ -140,7 +140,7 @@ export default function Highlight() {
   async function loadHighlights() {
     try {
       const highlightRecords = await pb
-        .collection("highlight_pitstop_2027")
+        .collection(collectionName)
         .getFullList({ sort: "-created", filter: "is_deleted = false" });
 
       const fetchedHighlights: HighlightItem[] = highlightRecords.map(
@@ -185,7 +185,7 @@ export default function Highlight() {
         formData.append("photos", file);
       });
 
-      await pb.collection("highlight_pitstop_2027").create(formData);
+      await pb.collection(collectionName).create(formData);
 
       await loadHighlights();
 
@@ -236,7 +236,7 @@ export default function Highlight() {
           item.id === id ? { ...item, status: newStatus } : item,
         ),
       );
-      await pb.collection("highlight_pitstop_2027").update(id, {
+      await pb.collection(collectionName).update(id, {
         status: newStatus,
       });
       toast.success("Status updated");
@@ -461,7 +461,7 @@ export default function Highlight() {
                                   <ActionList
                                     itemId={item.id}
                                     initialList={parseFollowUp(item.follow_up)}
-                                    colID="highlight_pitstop_2027"
+                                    colID={collectionName}
                                   />
                                 </div>
                               </div>
@@ -498,7 +498,7 @@ export default function Highlight() {
                           images={item.photos || []}
                           recordId={item.id}
                           baseUrl="https://data.miftachuda.my.id"
-                          collectionID="highlight_pitstop_2027"
+                          collectionID={collectionName}
                         />
                         <MultiImageUpload
                           onChange={handlePhotosChange}

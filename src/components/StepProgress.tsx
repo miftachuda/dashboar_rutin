@@ -508,7 +508,7 @@ export function StepProgress({
     }
 
     try {
-      await pb.collection("pitstop2027").update(task.id, {
+      await pb.collection(colID).update(task.id, {
         steps: task.steps,
         updatedCustom: new Date().toISOString(),
       });
@@ -533,7 +533,7 @@ export function StepProgress({
 
   const onUpdateAssignee = async (taskId: string, assignee: string) => {
     try {
-      await pb.collection("pitstop2027").update(taskId, {
+      await pb.collection(colID).update(taskId, {
         assignee,
         updatedCustom: new Date().toISOString(),
       });

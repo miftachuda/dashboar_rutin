@@ -15,6 +15,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
+  collectionName?: string;
 };
 
 const diciplineOptions = ["Rotating", "Stationary", "Instrument", "Electrical"];
@@ -44,7 +45,7 @@ function makeStep(): MaintenanceStep {
   };
 }
 
-export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
+export default function AddJoblistModal({ open, onClose, onSaved, collectionName = "pitstop2027" }: Props) {
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [uploadDoneKey, setUploadDoneKey] = useState(0);
@@ -185,7 +186,7 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
         formData.append("photos", file);
       });
 
-      await pb.collection("pitstop2027").create(formData);
+      await pb.collection(collectionName).create(formData);
 
       toast.success("Joblist created successfully");
       handleClose();
