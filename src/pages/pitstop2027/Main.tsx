@@ -47,18 +47,16 @@ const MainPage = () => {
       ) ||
       task.equipment?.toLowerCase().includes(q);
 
-    const cleanTitle = task.title?.replace(/\s+/g, "").toUpperCase();
-
     const matchPrefix =
       !prefixFilter ||
-      cleanTitle?.substring(0, 3) === prefixFilter.toUpperCase();
+      task.unit?.trim().toUpperCase() === prefixFilter.toUpperCase();
 
     const matchType = !selectedType || task.type === selectedType;
 
     return matchSearch && matchPrefix && matchType;
   });
 
-  const prefixes = ["021", "022", "023", "024", "025", "041"];
+  const prefixes = ["002", "021", "022", "023", "024", "025", "041"];
 
   const handleStepToggle = async (
     taskId: string,
@@ -172,6 +170,7 @@ const MainPage = () => {
       equipment: r.job ?? "",
       type: isEquipmentType(String(r.type ?? "").trim()) ? String(r.type ?? "").trim() : "Other",
       dicipline: r.dicipline ?? "",
+      unit: r.unit ?? "",
       priority: r.priority ?? "low",
       assignee: r.assignee ?? "",
       lastmodified: r.updatedCustom ?? Date.now(),
@@ -208,7 +207,7 @@ const MainPage = () => {
 
   const getProgressByPrefix = (prefix: string) => {
     const filteredTasks = tasks.filter(
-      (t) => t.title?.substring(0, 3).toUpperCase() === prefix.toUpperCase(),
+      (t) => t.unit?.trim().toUpperCase() === prefix.toUpperCase(),
     );
 
     if (filteredTasks.length === 0) return 0;
@@ -322,14 +321,21 @@ const MainPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-8xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mt-4 mb-6">
+        <div className="mt-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
           <input
             type="text"
             placeholder="Search joblist..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary md:w-96"
+            className="w-full flex-1 rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary md:w-96 md:flex-none"
           />
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-600 transition-all"
+          >
+            <Plus size={16} />
+            Add Joblist
+          </button>
         </div>
 
         <div className="mt-1 mb-2 flex flex-wrap gap-4">
@@ -386,24 +392,18 @@ const MainPage = () => {
           ))}
         </div>
 
-        <select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
-          className="rounded border px-2 py-1 text-xs font-light"
-        >
-          <option value="tag">Ascending</option>
-          <option value="-tag">Descending</option>
-          <option value="-updatedCustom">Latest Updated</option>
-          <option value="updatedCustom">Oldest Updated</option>
-        </select>
-
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-600 transition-all"
-        >
-          <Plus size={16} />
-          Add Joblist
-        </button>
+        <div className="mb-4">
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="rounded border px-2 py-1 text-xs font-light"
+          >
+            <option value="tag">Ascending</option>
+            <option value="-tag">Descending</option>
+            <option value="-updatedCustom">Latest Updated</option>
+            <option value="updatedCustom">Oldest Updated</option>
+          </select>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">

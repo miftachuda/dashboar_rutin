@@ -1,4 +1,5 @@
 import * as Tabs from "@radix-ui/react-tabs";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/MainLayout";
 import AdditionalsJoblist from "./AdditionalsJoblist";
 import CleaningStrainer from "./CleaningStrainer";
@@ -9,10 +10,10 @@ import RestrokeCV from "./RestrokeCV";
 
 const tabs = [
   { value: "progress", label: "Progress", Component: Progress },
-  { value: "main", label: "Main", Component: Main },
+  { value: "main", label: "Main Job List", Component: Main },
   {
     value: "additionals-joblist",
-    label: "Additionals Joblist",
+    label: "Additional Job List",
     Component: AdditionalsJoblist,
   },
   { value: "restroke-cv", label: "Restroke CV", Component: RestrokeCV },
@@ -29,10 +30,22 @@ const tabs = [
 ];
 
 export default function Pitstop2027() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabQuery = searchParams.get("tab");
+  const validTabValues = tabs.map(t => t.value);
+  
+  // Default to progress if no tab is specified or if the tab is invalid
+  const activeTab = tabQuery && validTabValues.includes(tabQuery) ? tabQuery : "progress";
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
+
   return (
     <DashboardLayout>
       <Tabs.Root
-        defaultValue="progress"
+        value={activeTab}
+        onValueChange={handleTabChange}
         className="flex h-full flex-col bg-slate-50"
       >
         <div className="border-b border-sky-100 bg-white px-4 py-3 shadow-sm sm:px-6">

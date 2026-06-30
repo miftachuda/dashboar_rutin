@@ -21,6 +21,7 @@ const diciplineOptions = ["Rotating", "Stationary", "Instrument", "Electrical"];
 const priorityOptions: Priority[] = ["low", "medium", "high", "critical"];
 
 const fieldDefaults = {
+  unit: "",
   tag: "",
   job: "",
   type: "Heat Exchanger" as EquipmentType,
@@ -49,7 +50,9 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
   const [uploadDoneKey, setUploadDoneKey] = useState(0);
   const [form, setForm] = useState(fieldDefaults);
   const [steps, setSteps] = useState<StepGroup[]>([]);
-  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -78,11 +81,18 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
   };
 
   const addItem = (stepId: string) => {
+    const newItem = makeStep();
     setSteps((prev) =>
       prev.map((s) =>
-        s.id === stepId ? { ...s, steplist: [...s.steplist, makeStep()] } : s,
+        s.id === stepId ? { ...s, steplist: [...s.steplist, newItem] } : s,
       ),
     );
+    setExpandedSteps((prev) => ({ ...prev, [stepId]: true }));
+    setTimeout(() => {
+      document
+        .getElementById(`modal-item-${newItem.id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
   };
 
   const removeItem = (stepId: string, itemId: string) => {
@@ -142,9 +152,7 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
           s.steplist.some((i) => i.steptitle.trim()) &&
           (!s.stepname.trim() || s.steplist.some((i) => !i.steptitle.trim())),
       );
-      if (
-        steps.some((s) => s.stepname.trim() && s.steplist.length === 0)
-      ) {
+      if (steps.some((s) => s.stepname.trim() && s.steplist.length === 0)) {
         toast.error("Each step must have at least one steplist item");
         return;
       }
@@ -154,6 +162,7 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
 
     try {
       const formData = new FormData();
+      formData.append("unit", form.unit.trim());
       formData.append("tag", form.tag.trim());
       formData.append("job", form.job.trim());
       formData.append("type", form.type);
@@ -217,8 +226,21 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
-          {/* Row 1: Tag + Job */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Row 1: Unit + Tag + Job */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[100px_1fr_2fr]">
+            <div>
+              <label className="block text-sm font-semibold text-sky-800 mb-1">
+                Unit
+              </label>
+              <input
+                name="unit"
+                type="text"
+                value={form.unit}
+                onChange={handleChange}
+                placeholder="e.g. 021"
+                className="w-full rounded-lg border border-sky-200 bg-sky-50/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+            </div>
             <div>
               <label className="block text-sm font-semibold text-sky-800 mb-1">
                 Tag Number <span className="text-red-500">*</span>
@@ -228,21 +250,21 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
                 type="text"
                 value={form.tag}
                 onChange={handleChange}
-                placeholder="e.g. 021-HE-001"
+                placeholder="e.g. 021E-101"
                 className="w-full rounded-lg border border-sky-200 bg-sky-50/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-sky-800 mb-1">
-                Job / Equipment <span className="text-red-500">*</span>
+                Jobs <span className="text-red-500">*</span>
               </label>
               <input
                 name="job"
                 type="text"
                 value={form.job}
                 onChange={handleChange}
-                placeholder="e.g. Heat Exchanger A"
+                placeholder="e.g. Cleaning, Repair, Inspection, Overhaul"
                 className="w-full rounded-lg border border-sky-200 bg-sky-50/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                 required
               />
@@ -315,7 +337,7 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
                 type="text"
                 value={form.assignee}
                 onChange={handleChange}
-                placeholder="e.g. LOC II, MA II"
+                placeholder=""
                 className="w-full rounded-lg border border-sky-200 bg-sky-50/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
@@ -390,20 +412,24 @@ export default function AddJoblistModal({ open, onClose, onSaved }: Props) {
                       <input
                         type="text"
                         value={step.stepname}
-                        onChange={(e) => updateStepName(step.id, e.target.value)}
+                        onChange={(e) =>
+                          updateStepName(step.id, e.target.value)
+                        }
                         placeholder="Step name (e.g. Inspection, Overhaul)"
                         className="w-full rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                       />
 
                       {step.steplist.length === 0 && (
                         <p className="text-xs text-muted-foreground py-2 text-center">
-                          No items yet. Click &quot;Add Item&quot; to add steplist items.
+                          No items yet. Click &quot;Add Item&quot; to add
+                          steplist items.
                         </p>
                       )}
 
                       {step.steplist.map((item, iIdx) => (
                         <div
                           key={item.id}
+                          id={`modal-item-${item.id}`}
                           className="flex items-center gap-2 rounded-lg border border-sky-100 bg-white px-3 py-2"
                         >
                           <span className="text-xs text-muted-foreground font-mono shrink-0">

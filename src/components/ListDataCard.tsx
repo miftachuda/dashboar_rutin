@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import imageCompression from "browser-image-compression";
 import { format, formatDistanceToNow } from "date-fns";
 import { pb } from "@/lib/pocketbase";
+import { toast } from "sonner";
 import { ListData } from "@/types/listdata";
 import { WaktuPelaksanaan } from "@/types/enum";
 import { sendNotif } from "@/lib/sendnotif";
@@ -16,6 +17,7 @@ import {
   Upload,
   Image as ImageIcon,
   X,
+  Send,
 } from "lucide-react";
 import PillCards from "./phill";
 
@@ -172,6 +174,40 @@ const removePhotoFromTimelineTracking = (
   };
 };
 
+const typeMap: Record<string, string> = {
+  "Valve": "Piping",
+  "Pipeline": "Piping",
+  "Heat Exchanger": "Heat Exchanger",
+  "Vessel": "Vessel",
+  "Pump": "Pump",
+  "Compressor": "Compressor",
+  "Motor": "Electrical",
+  "Fin Fan": "Other",
+  "Boardesk": "Other",
+  "Transmitter": "Instrument",
+  "Burner": "Furnace",
+  "Flange": "Piping",
+  "Liquid Trap": "Piping",
+  "Furnace": "Furnace"
+};
+
+const disciplineMap: Record<string, string> = {
+  "Valve": "Piping",
+  "Pipeline": "Piping",
+  "Heat Exchanger": "Heat Exchanger",
+  "Vessel": "Vessel",
+  "Pump": "Rotating",
+  "Compressor": "Rotating",
+  "Motor": "Electrical",
+  "Fin Fan": "Rotating",
+  "Boardesk": "Other",
+  "Transmitter": "Instrument",
+  "Burner": "Furnace",
+  "Flange": "Piping",
+  "Liquid Trap": "Piping",
+  "Furnace": "Furnace"
+};
+
 export default function MaintenanceCardList({
   data,
   onDeleted,
@@ -183,6 +219,56 @@ export default function MaintenanceCardList({
 }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ListData | null>(null);
+  const [exportMenuTarget, setExportMenuTarget] = useState<ListData | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+
+  const handleExport = async (item: ListData, target: "pitstop2027" | "turnaround2028") => {
+    setExportMenuTarget(null);
+    if (exportingId) return;
+    setExportingId(item.id);
+    const toastId = toast.loading(`Exporting to ${target === "pitstop2027" ? "Pitstop 2027" : "Turn Around 2028"}...`);
+    
+    try {
+      const formData = new FormData();
+      formData.append("unit", item.unit || "");
+      formData.append("tag", item.tag_name || "-");
+      formData.append("job", `${item.judul} (Issue : ${item.issue || "-"})`);
+      
+      const mappedType = item.type ? (typeMap[item.type] || "Other") : "Other";
+      formData.append("type", mappedType);
+      
+      const mappedDiscipline = item.type ? (disciplineMap[item.type] || "Other") : "Other";
+      formData.append("dicipline", mappedDiscipline);
+      
+      formData.append("priority", "medium");
+      formData.append("assignee", "");
+      formData.append("updatedCustom", new Date().toISOString());
+      formData.append("steps", JSON.stringify([]));
+
+      if (item.photo && item.photo.length > 0) {
+        for (const photoName of item.photo) {
+          try {
+            const url = pb.files.getURL(item, photoName);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Failed to fetch image");
+            const blob = await response.blob();
+            formData.append("photos", blob, photoName);
+          } catch (err) {
+            console.warn(`Failed to export photo ${photoName}`, err);
+          }
+        }
+      }
+
+      await pb.collection(target).create(formData);
+      toast.success("Successfully exported!", { id: toastId });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export.", { id: toastId });
+    } finally {
+      setExportingId(null);
+    }
+  };
+
   const [deletingPhoto, setDeletingPhoto] = useState<{
     itemId: string;
     fileName: string;
@@ -987,20 +1073,31 @@ export default function MaintenanceCardList({
                           />
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget(item)}
-                        disabled={deletingId === item.id}
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
-                        aria-label={`Delete ${item.judul}`}
-                      >
-                        {deletingId === item.id ? (
-                          <Loader2 size={15} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={15} />
-                        )}
-                      </button>
+                      
+                      <div className="flex gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setExportMenuTarget(item); }}
+                          disabled={exportingId === item.id}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-600 transition-all hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          title="Export"
+                        >
+                          {exportingId === item.id ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(item); }}
+                          disabled={deletingId === item.id}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          aria-label={`Delete ${item.judul}`}
+                        >
+                          {deletingId === item.id ? (
+                            <Loader2 size={15} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={15} />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="text-right text-[10px] font-medium leading-4 text-slate-400">
@@ -1885,9 +1982,61 @@ export default function MaintenanceCardList({
                 {deletingId === deleteTarget.id ? "Deleting..." : "Delete"}
               </button>
             </div>
+            </div>
           </div>
-        </div>
-      )}
-    </>
-  );
-}
+        )}
+
+        {exportMenuTarget && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Export item"
+          >
+            <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl">
+              <div className="flex items-start gap-4">
+                <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
+                  <Send size={24} />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Export Item
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Where would you like to export "{exportMenuTarget.judul}"?
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleExport(exportMenuTarget, "pitstop2027")}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-sky-700"
+                >
+                  <Send size={16} />
+                  Export to Pitstop 2027
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport(exportMenuTarget, "turnaround2028")}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-sky-700"
+                >
+                  <Send size={16} />
+                  Export to Turn Around 2028
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportMenuTarget(null)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }

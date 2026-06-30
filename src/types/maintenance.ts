@@ -96,6 +96,7 @@ export interface StepTask {
   equipment: string;
   type: EquipmentType;
   dicipline: string;
+  unit?: string;
   priority: Priority;
   assignee: string;
   lastmodified: number;

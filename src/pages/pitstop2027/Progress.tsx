@@ -39,6 +39,7 @@ function recordToStepTask(record: any): StepTask {
     equipment: record.job ?? "",
     type: isEquipmentType(type) ? type : "Other",
     dicipline: record.dicipline ?? "",
+    unit: record.unit ?? "",
     priority: record.priority ?? "low",
     assignee: record.assignee ?? "",
     lastmodified: record.updatedCustom ?? Date.now(),

@@ -448,6 +448,9 @@ export function StepProgress({
     };
     if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
+    
+    setOpenSteps((prev) => ({ ...prev, [stepId]: true }));
+    
     setTasks((prev) =>
       prev.map((t) =>
         t.id === task.id
@@ -462,6 +465,10 @@ export function StepProgress({
     );
     setEditingItemId(newItem.id);
     setItemTitleDraft("");
+
+    setTimeout(() => {
+      document.getElementById(`item-${newItem.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
   };
 
   // ─── Add step ────────────────────────────────────────
@@ -585,6 +592,11 @@ export function StepProgress({
               {task.title}
               <span className="mx-1">•</span>
             </h3>
+            {task.unit && (
+              <span className="mr-2 select-none rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                Unit {task.unit}
+              </span>
+            )}
             <div className="select-none text-[9px] text-muted-foreground">
               last modified:{" "}
               <span className="italic text-[9px] text-muted-foreground">
@@ -761,12 +773,13 @@ export function StepProgress({
                     {step.steplist.map((item) => {
                       if (!item) return null;
 
-                      return (
-                        <div
-                          key={item.id}
-                          className="my-1 ml-6 mr-2 flex items-start gap-1 rounded-lg border py-2"
-                        >
-                          <div className="flex w-full flex-col">
+                        return (
+                          <div
+                            key={item.id}
+                            id={`item-${item.id}`}
+                            className="my-1 ml-6 mr-2 flex items-start gap-1 rounded-lg border py-2"
+                          >
+                            <div className="flex w-full flex-col">
                             {/* HEADER */}
                             <div className="flex items-center gap-1 px-3">
                               {/* Status icon */}
