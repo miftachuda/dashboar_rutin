@@ -326,19 +326,11 @@ export function StepAdditional({
                 {typeLabels[task.type]}
               </span>
               <div className="flex flex-row items-center">
-                <h3 className="font-display font-semibold  select-none text-base text-card-foreground">
-                  {task.title}
-                  <span className="mx-1">•</span>
-                </h3>
-                <div className="text-[9px] text-muted-foreground select-none">
-                  last modified:{" "}
-                  <span className="text-[9px] text-muted-foreground italic">
-                    {formatDistanceToNow(new Date(task.lastmodified), {
-                      addSuffix: true,
-                    })}
-                  </span>
+                  <h3 className="font-display font-semibold  select-none text-base text-card-foreground">
+                    {task.title}
+                    <span className="mx-1">•</span>
+                  </h3>
                 </div>
-              </div>
 
               <span
                 className={`ml-2 px-1.5 py-0.5 text-[10px] font-semibold rounded border transition-all flex items-center justify-center
@@ -568,6 +560,17 @@ export function StepAdditional({
           {uploadingMap[task.id] ? "Uploading..." : "Upload"}
         </button>
       </Collapsible>
+
+      <div className="mt-3 flex justify-end">
+        <div className="select-none text-[9px] text-muted-foreground">
+          last modified:{" "}
+          <span className="italic text-[9px] text-muted-foreground">
+            {formatDistanceToNow(new Date(task.lastmodified), {
+              addSuffix: true,
+            })}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

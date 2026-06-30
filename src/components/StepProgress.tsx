@@ -597,14 +597,6 @@ export function StepProgress({
                 Unit {task.unit}
               </span>
             )}
-            <div className="select-none text-[9px] text-muted-foreground">
-              last modified:{" "}
-              <span className="italic text-[9px] text-muted-foreground">
-                {formatDistanceToNow(new Date(task.lastmodified), {
-                  addSuffix: true,
-                })}
-              </span>
-            </div>
           </div>
           <span
             className={`select-none rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wider ${typeClasses[task.type]}`}
@@ -976,6 +968,17 @@ export function StepProgress({
           {uploadingMap[task.id] ? "Uploading..." : "Upload"}
         </button>
       </Collapsible>
+
+      <div className="mt-3 flex justify-end">
+        <div className="select-none text-[9px] text-muted-foreground">
+          last modified:{" "}
+          <span className="italic text-[9px] text-muted-foreground">
+            {formatDistanceToNow(new Date(task.lastmodified), {
+              addSuffix: true,
+            })}
+          </span>
+        </div>
+      </div>
 
       {/* Controlled Delete Confirmation */}
       {deleteTarget && (
