@@ -17,7 +17,7 @@ import MultiImageUpload from "./MultiImageUpload";
 import { Collapsible } from "./Collapsible";
 import ImagePreviewRow from "./ImagePreview";
 
-type DeleteTarget = { type: "step"; id: string } | { type: "item"; stepId: string; id: string } | null;
+type DeleteTarget = { type: "step"; id: string } | { type: "item"; stepId: string; id: string } | { type: "joblist" } | null;
 
 function ItemMenu({
   onEdit,
@@ -96,6 +96,7 @@ interface StepProgressProps {
   };
   updateTaskState: (taskId: string, state: any) => void;
   onSave: (taskId: string) => void;
+  onDeleteJoblist?: (taskId: string) => void;
   colID: string;
 }
 
@@ -148,6 +149,7 @@ export function StepProgress({
   state,
   updateTaskState,
   onSave,
+  onDeleteJoblist,
   colID,
 }: StepProgressProps) {
   const [openSteps, setOpenSteps] = useState<Record<string, boolean>>({});
@@ -197,6 +199,7 @@ export function StepProgress({
     field: "startdate" | "enddate",
     value: number,
   ) => {
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, {
       isDirty: true,
       isSaved: false,
@@ -245,6 +248,7 @@ export function StepProgress({
     itemId: string,
     value: string,
   ) => {
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, {
       isDirty: true,
       isSaved: false,
@@ -278,6 +282,7 @@ export function StepProgress({
     itemId: string,
     val: number,
   ) => {
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, {
       isDirty: true,
       isSaved: false,
@@ -319,6 +324,8 @@ export function StepProgress({
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [stepNameDraft, setStepNameDraft] = useState("");
+  const [stepsSnapshot, setStepsSnapshot] = useState(task.steps);
+  const snapshotTaken = useRef(false);
 
   const startEditStep = (stepId: string, currentName: string) => {
     setEditingStepId(stepId);
@@ -330,6 +337,7 @@ export function StepProgress({
       setEditingStepId(null);
       return;
     }
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
     setTasks((prev) =>
       prev.map((t) =>
@@ -365,6 +373,7 @@ export function StepProgress({
       setEditingItemId(null);
       return;
     }
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
     setTasks((prev) =>
       prev.map((t) =>
@@ -397,6 +406,7 @@ export function StepProgress({
 
   // ─── Delete steplist item ──────────────────────────────
   const deleteSteplistItem = (stepId: string, itemId: string) => {
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
     setTasks((prev) =>
       prev.map((t) =>
@@ -416,6 +426,7 @@ export function StepProgress({
 
   // ─── Delete step ──────────────────────────────────────
   const deleteStep = (stepId: string) => {
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
     setTasks((prev) =>
       prev.map((t) =>
@@ -435,6 +446,7 @@ export function StepProgress({
       progress: 0,
       status: "not yet" as const,
     };
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
     setTasks((prev) =>
       prev.map((t) =>
@@ -459,6 +471,7 @@ export function StepProgress({
       stepname: "",
       steplist: [],
     };
+    if (!snapshotTaken.current) { setStepsSnapshot(task.steps); snapshotTaken.current = true; }
     updateTaskState(task.id, { isDirty: true, isSaved: false });
     setTasks((prev) =>
       prev.map((t) =>
@@ -486,6 +499,29 @@ export function StepProgress({
     if (pic !== task.assignee) {
       await onUpdateAssignee(task.id, pic);
     }
+
+    try {
+      await pb.collection("pitstop2027").update(task.id, {
+        steps: task.steps,
+        updatedCustom: new Date().toISOString(),
+      });
+      updateTaskState(task.id, { isDirty: false, isSaved: true, isSaving: false });
+      setStepsSnapshot(task.steps);
+      snapshotTaken.current = false;
+      toast.success("Changes saved");
+    } catch (err) {
+      toast.error("Failed to save changes");
+    }
+  };
+
+  const handleCancel = () => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id ? { ...t, steps: stepsSnapshot } : t,
+      ),
+    );
+    updateTaskState(task.id, { isDirty: false, isSaved: false, isSaving: false });
+    snapshotTaken.current = false;
   };
 
   const onUpdateAssignee = async (taskId: string, assignee: string) => {
@@ -565,25 +601,29 @@ export function StepProgress({
           </span>
         </div>
 
-        <button
-          onClick={() => onSave(task.id)}
-          disabled={!state.isDirty || state.isSaving}
-          className={`rounded-md px-2 py-1 text-[10px] font-mono select-none transition ${
-            state.isSaved
-              ? "bg-green-500/10 text-green-400"
-              : state.isDirty
-                ? "bg-blue-500/10 text-blue-600"
-                : "cursor-not-allowed bg-gray-200 text-gray-400"
-          }`}
-        >
-          {state.isSaving
-            ? "Saving..."
-            : state.isSaved
-              ? "Saved ✓"
-              : state.isDirty
-                ? "Save"
-                : "Saved"}
-        </button>
+        {state.isDirty && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCancel}
+              className="rounded-md border border-sky-200 px-3 py-1 text-[10px] font-medium text-sky-700 hover:bg-sky-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={state.isSaving}
+              className="rounded-md bg-sky-500 px-3 py-1 text-[10px] font-medium text-white hover:bg-sky-600 disabled:opacity-50 transition"
+            >
+              {state.isSaving ? "Saving..." : "Save"}
+            </button>
+          </div>
+        )}
+
+        {onDeleteJoblist && (
+          <ItemMenu
+            onDelete={() => setDeleteTarget({ type: "joblist" })}
+          />
+        )}
       </div>
 
       <div className="mb-1">
@@ -936,6 +976,8 @@ export function StepProgress({
             <p className="mb-6 text-sm text-gray-600">
               {deleteTarget.type === "step"
                 ? "Delete this step and all its items? This cannot be undone."
+                : deleteTarget.type === "joblist"
+                ? "Archive this joblist? It will be hidden from the list."
                 : "Delete this steplist item? This cannot be undone."}
             </p>
             <div className="flex justify-end gap-3">
@@ -952,6 +994,8 @@ export function StepProgress({
                   try {
                     if (deleteTarget.type === "step") {
                       deleteStep(deleteTarget.id);
+                    } else if (deleteTarget.type === "joblist") {
+                      if (onDeleteJoblist) await onDeleteJoblist(task.id);
                     } else {
                       deleteSteplistItem(deleteTarget.stepId, deleteTarget.id);
                     }
@@ -963,7 +1007,7 @@ export function StepProgress({
                 disabled={confirmLoading}
                 className="flex items-center gap-2 rounded bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 disabled:opacity-50"
               >
-                {confirmLoading ? "Deleting..." : "Delete"}
+                {confirmLoading ? "Processing..." : "Confirm"}
               </button>
             </div>
           </div>

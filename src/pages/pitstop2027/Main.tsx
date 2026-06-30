@@ -140,6 +140,16 @@ const MainPage = () => {
     }
   };
 
+  const handleDeleteJoblist = async (taskId: string) => {
+    try {
+      await pb.collection("pitstop2027").update(taskId, { isDeleted: true });
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      toast.success("Joblist archived");
+    } catch (err) {
+      toast.error("Failed to archive joblist");
+    }
+  };
+
   function recordToStepTask(r: any): StepTask {
     let steps: StepGroup[] = [];
 
@@ -176,6 +186,7 @@ const MainPage = () => {
     try {
       const pitstopRecords = await pb.collection("pitstop2027").getFullList({
         sort: sortOption,
+        filter: 'isDeleted = false',
       });
 
       const fetchedTasks: StepTask[] = pitstopRecords.map(recordToStepTask);
@@ -413,6 +424,7 @@ const MainPage = () => {
                   state={taskStates[task.id] || {}}
                   updateTaskState={updateTaskState}
                   onSave={handleSave}
+                  onDeleteJoblist={handleDeleteJoblist}
                   colID="pitstop2027"
                 />
               ))}
