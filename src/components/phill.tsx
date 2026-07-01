@@ -245,7 +245,7 @@ export default function PillCards({
   }>;
 
   return (
-    <div className="flex  gap-4">
+    <div className="flex flex-wrap gap-2 sm:gap-3">
       {items.map((item, idx) => {
         const color =
           item.kind === "unit"

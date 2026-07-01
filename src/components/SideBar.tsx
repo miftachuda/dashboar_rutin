@@ -224,15 +224,16 @@ export default function Sidebar({
 
       {/* Menu */}
       <div className="flex-1 overflow-x-auto px-3 pb-3 md:overflow-y-auto md:pb-0">
-        {menus.map((group) => (
-          <div key={group.section} className="mb-0 md:mb-7">
-            {!collapsed && (
-              <p className="text-[11px] uppercase text-sky-500 mb-3 px-3 font-semibold tracking-wide">
-                {group.section}
-              </p>
-            )}
+        <div className="flex gap-4 md:block">
+          {menus.map((group) => (
+            <div key={group.section} className="flex shrink-0 gap-2 md:block md:mb-7">
+              {!collapsed && (
+                <p className="hidden md:block text-[11px] uppercase text-sky-500 mb-3 px-3 font-semibold tracking-wide">
+                  {group.section}
+                </p>
+              )}
 
-            <div className="flex gap-2 md:block md:space-y-1">
+              <div className="flex shrink-0 gap-2 md:block md:space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isExternal = "url" in item;
@@ -303,6 +304,7 @@ export default function Sidebar({
             </div>
           </div>
         ))}
+        </div>
       </div>
     </aside>
   );

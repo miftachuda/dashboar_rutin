@@ -334,40 +334,44 @@ function getTargetEta(row: TankRow, tank?: TankRecord) {
     row.rateMmPerHour == null ||
     row.rateMmPerHour === 0
   ) {
-    return { text: "-", className: "text-slate-400" };
+    return { text: "-", className: "text-slate-400", hours: null };
   }
 
-  if (!tank) return { text: "N/A", className: "text-slate-400" };
+  if (!tank) return { text: "N/A", className: "text-slate-400", hours: null };
 
   const lowTarget = Number(tank.low_target);
   const highTarget = Number(tank.high_target);
 
   if (row.rateMmPerHour > 0) {
     if (!Number.isFinite(highTarget)) {
-      return { text: "-", className: "text-slate-400" };
+      return { text: "-", className: "text-slate-400", hours: null };
     }
     if (row.level >= highTarget) {
-      return { text: "High reached", className: "text-red-600" };
+      return { text: "High reached", className: "text-red-600", hours: 0 };
     }
 
-    const eta = formatEta((highTarget - row.level) / row.rateMmPerHour);
+    const hours = (highTarget - row.level) / row.rateMmPerHour;
+    const eta = formatEta(hours);
     return {
       text: eta === "-" ? "-" : `High in ${eta}`,
       className: "text-emerald-600",
+      hours,
     };
   }
 
   if (!Number.isFinite(lowTarget)) {
-    return { text: "-", className: "text-slate-400" };
+    return { text: "-", className: "text-slate-400", hours: null };
   }
   if (row.level <= lowTarget) {
-    return { text: "Low reached", className: "text-red-600" };
+    return { text: "Low reached", className: "text-red-600", hours: 0 };
   }
 
-  const eta = formatEta((row.level - lowTarget) / Math.abs(row.rateMmPerHour));
+  const hours = (row.level - lowTarget) / Math.abs(row.rateMmPerHour);
+  const eta = formatEta(hours);
   return {
     text: eta === "-" ? "-" : `Low in ${eta}`,
     className: "text-orange-600",
+    hours,
   };
 }
 
@@ -915,6 +919,7 @@ const LiveTankLevel: React.FC = () => {
                     const targetEta = getTargetEta(row, tankMetadata);
                     const tankHistory =
                       tankHistoryByKey[normalizeTankKey(row.tank)] ?? [];
+                    const isEtaCritical = targetEta.hours !== null && targetEta.hours < 12;
 
                     return (
                       <tr
@@ -922,6 +927,8 @@ const LiveTankLevel: React.FC = () => {
                         className={`transition-colors ${
                           isStale10s
                             ? "bg-slate-100 opacity-50 grayscale hover:bg-slate-100"
+                            : isEtaCritical
+                            ? "bg-red-50/50 hover:bg-red-100/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] outline outline-1 outline-red-400 relative z-10"
                             : "hover:bg-sky-50/50"
                         }`}
                       >

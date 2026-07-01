@@ -464,8 +464,8 @@ const ListKerusakanPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="flex w-full flex-col items-start justify-center gap-3 p-3 sm:p-6">
-        <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-500 to-cyan-500 p-4 text-white shadow-sm sm:p-5 xl:col-span-1">
+        <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <div className="col-span-2 md:col-span-1 xl:col-span-1 rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-500 to-cyan-500 p-4 text-white shadow-sm sm:p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-sky-100">
               {scopedListData.length > 0
                 ? Math.round(
