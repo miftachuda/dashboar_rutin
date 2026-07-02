@@ -17,4 +17,5 @@ export type ListData = {
   waktu_pelaksanaan: string;
   progress: number;
   isDeleted: boolean;
+  redundan: string;
 };

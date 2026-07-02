@@ -1,1 +1,1 @@
-export const WaktuPelaksanaan = ["Rutin", "Pit Stop", "Turn Around"] as const;
+export const WaktuPelaksanaan = ["On Stream", "Pit Stop", "Turn Around"] as const;

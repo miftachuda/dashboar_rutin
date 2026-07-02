@@ -41,14 +41,14 @@ const waitForNextPaint = () =>
 
 export const getWaktuPelaksanaanRibbonClass = (value: string) => {
   switch (value.trim().toLowerCase()) {
-    case "rutin":
-      return "from-green-700 via-green-500 to-green-700";
+    case "on stream":
+      return "bg-green-100 text-green-700 border border-green-200";
     case "pit stop":
-      return "from-amber-700 via-amber-500 to-amber-700";
+      return "bg-amber-100 text-amber-700 border border-amber-200";
     case "turn around":
-      return "from-red-700 via-red-500 to-red-700";
+      return "bg-red-100 text-red-700 border border-red-200";
     default:
-      return "from-slate-700 via-slate-500 to-slate-700";
+      return "bg-slate-100 text-slate-700 border border-slate-200";
   }
 };
 
@@ -991,6 +991,7 @@ export default function MaintenanceCardList({
           const ribbonColorClass = getWaktuPelaksanaanRibbonClass(
             item.waktu_pelaksanaan,
           );
+          const needsRedGlow = item.redundan === "n+0" && progress < 100;
 
           return (
             <div
@@ -1007,9 +1008,20 @@ export default function MaintenanceCardList({
               }}
               role="button"
               tabIndex={0}
-              className="relative w-full cursor-pointer overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2"
+              className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 ${
+                needsRedGlow ? "z-10 border-red-400" : "border-sky-100"
+              }`}
             >
-              <div className="bg-gradient-to-r from-sky-50 to-cyan-50 px-3 py-2">
+              {needsRedGlow && (
+                <div className="pointer-events-none absolute inset-0 z-20 rounded-2xl shadow-[inset_0_0_25px_rgba(239,68,68,0.3)] ring-1 ring-inset ring-red-400/50" />
+              )}
+              <div
+                className={`px-3 py-2 ${
+                  needsRedGlow
+                    ? "bg-gradient-to-r from-red-50 to-orange-50"
+                    : "bg-gradient-to-r from-sky-50 to-cyan-50"
+                }`}
+              >
                 <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
                     {item.photo?.[0] ? (
@@ -1033,10 +1045,21 @@ export default function MaintenanceCardList({
                           unit={item.unit}
                         />
                         <span
-                          className={`rounded-full bg-gradient-to-r ${ribbonColorClass} px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm`}
+                          className={`rounded-full ${ribbonColorClass} px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm`}
                         >
                           {item.waktu_pelaksanaan}
                         </span>
+                        {item.redundan && item.redundan !== "none" && (
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
+                              item.redundan === "n+0" 
+                                ? "bg-red-500 text-white" 
+                                : "bg-emerald-500 text-white"
+                            }`}
+                          >
+                            {item.redundan}
+                          </span>
+                        )}
                       </div>
 
                       <div className="mt-1 flex min-w-0 items-baseline gap-2">
@@ -1240,12 +1263,25 @@ export default function MaintenanceCardList({
               </button>
 
               <div className="sm:pr-24">
-                <PillCards
-                  discipline={detailItem.discipline}
-                  type={detailItem.type}
-                  tag={detailItem.tag_name}
-                  unit={detailItem.unit}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <PillCards
+                    discipline={detailItem.discipline}
+                    type={detailItem.type}
+                    tag={detailItem.tag_name}
+                    unit={detailItem.unit}
+                  />
+                  {detailItem.redundan && detailItem.redundan !== "none" && (
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
+                        detailItem.redundan === "n+0" 
+                          ? "bg-red-500 text-white" 
+                          : "bg-emerald-500 text-white"
+                      }`}
+                    >
+                      {detailItem.redundan}
+                    </span>
+                  )}
+                </div>
 
                 {editingTitleId === detailItem.id ? (
                   <div className="mt-2 max-w-2xl space-y-2">

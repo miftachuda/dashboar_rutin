@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Plus,
+  Layers,
 } from "lucide-react";
 import { WaktuPelaksanaan } from "@/types/enum";
 import { pb } from "@/lib/pocketbase";
@@ -37,6 +38,7 @@ const typeOptions = [
   "Burner",
   "Flange",
 ];
+const redundanOptions = ["none", "n+0", "n+1"];
 
 type Props = {
   open: boolean;
@@ -61,6 +63,7 @@ const createInitialFormData = () => ({
   last_update: "",
   tracking: "",
   isDeleted: false,
+  redundan: "",
 });
 
 const requiredFields = [
@@ -197,7 +200,9 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
         dataToSave.append("photo", photo.file, photo.file.name);
       });
 
-      const createdRecord = await pb.collection("db_maintenance").create(dataToSave);
+      const createdRecord = await pb
+        .collection("db_maintenance")
+        .create(dataToSave);
 
       await sendNotif({
         title: "[Maintenance] New Record",
@@ -223,7 +228,7 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
   }
 
   const waktuTypes: typeof WaktuPelaksanaan = [
-    "Rutin",
+    "On Stream",
     "Pit Stop",
     "Turn Around",
   ];
@@ -394,6 +399,42 @@ export default function InputPopUp({ open, onClose, onSaved }: Props) {
                 ))}
               </select>
               <FieldError show={fieldErrors.discipline} />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <span className="text-sky-600">
+                  <Layers size={18} />
+                </span>
+                Redundancy
+              </label>
+
+              <select
+                name="redundan"
+                value={formData.redundan}
+                onChange={handleChange}
+                className={`
+                  w-full
+                  rounded-2xl
+                  border
+                  ${getFieldStateClass(fieldErrors.redundan)}
+                  px-4
+                  py-3
+                  outline-none
+                  focus:ring-2
+                  transition-all
+                `}
+              >
+                <option value="" disabled>
+                  Select redundan
+                </option>
+                {redundanOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <FieldError show={fieldErrors.redundan} />
             </div>
 
             <div>

@@ -82,7 +82,7 @@ type SortDirection = "asc" | "desc";
 type RateUnit = "mm/h" | "m3/h" | "T/D";
 
 const wsUrl = "wss://tank.loc-2.com/ws";
-const historyUrl = "http://tank.loc-2.com/history";
+const historyUrl = "https://tank.loc-2.com/history";
 const trendWindowMs = 12 * 60 * 1000;
 
 const predefinedTankList: TankDefinition[] = [
@@ -919,7 +919,8 @@ const LiveTankLevel: React.FC = () => {
                     const targetEta = getTargetEta(row, tankMetadata);
                     const tankHistory =
                       tankHistoryByKey[normalizeTankKey(row.tank)] ?? [];
-                    const isEtaCritical = targetEta.hours !== null && targetEta.hours < 12;
+                    const isEtaCritical =
+                      targetEta.hours !== null && targetEta.hours < 12;
 
                     return (
                       <tr
@@ -928,8 +929,8 @@ const LiveTankLevel: React.FC = () => {
                           isStale10s
                             ? "bg-slate-100 opacity-50 grayscale hover:bg-slate-100"
                             : isEtaCritical
-                            ? "bg-red-50/50 hover:bg-red-100/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] outline outline-1 outline-red-400 relative z-10"
-                            : "hover:bg-sky-50/50"
+                              ? "bg-red-50/50 hover:bg-red-100/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] outline outline-1 outline-red-400 relative z-10"
+                              : "hover:bg-sky-50/50"
                         }`}
                       >
                         <td className="px-2 py-2 font-semibold text-slate-500">
