@@ -523,7 +523,11 @@ const ListKerusakanPage: React.FC = () => {
                   active ? "scale-105 z-10" : "hover:-translate-y-0.5"
                 } ${glowClass}`}
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">All Units</p>
+                <p className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-all ${
+                  active ? "bg-sky-500 text-white shadow-sm" : "bg-transparent text-slate-500"
+                }`}>
+                  All Units
+                </p>
                 <p className="text-2xl font-bold leading-none text-sky-900 sm:text-3xl">
                   {unitCountsBaseData.length}
                 </p>
@@ -577,7 +581,9 @@ const ListKerusakanPage: React.FC = () => {
                   active ? "scale-105 z-10" : "hover:-translate-y-0.5"
                 } ${glowClass}`}
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-all ${
+                  active ? `${color.background} text-white shadow-sm` : "bg-transparent text-slate-500"
+                }`}>
                   Unit {unit}
                 </p>
                 <p className="text-2xl font-bold leading-none text-sky-900 sm:text-3xl">
