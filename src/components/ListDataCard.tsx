@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
   X,
   Send,
+  Save,
 } from "lucide-react";
 import PillCards from "./phill";
 
@@ -281,6 +282,11 @@ export default function MaintenanceCardList({
     item: ListData;
     nextValue: string;
   } | null>(null);
+  const [redundanTarget, setRedundanTarget] = useState<{
+    item: ListData;
+    nextValue: string;
+  } | null>(null);
+  const [updatingRedundanId, setUpdatingRedundanId] = useState<string | null>(null);
   const [compressingId, setCompressingId] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [updatingReferenceId, setUpdatingReferenceId] = useState<string | null>(
@@ -835,6 +841,61 @@ export default function MaintenanceCardList({
     }
   };
 
+  const handleRedundanChange = (
+    item: ListData,
+    nextRedundan: string,
+  ) => {
+    if (
+      nextRedundan === item.redundan ||
+      updatingRedundanId === item.id
+    ) {
+      return;
+    }
+
+    setRedundanTarget({ item, nextValue: nextRedundan });
+  };
+
+  const handleConfirmRedundanChange = async () => {
+    if (!redundanTarget) return;
+
+    const { item, nextValue } = redundanTarget;
+
+    try {
+      setUpdatingRedundanId(item.id);
+      const updatedItem = await pb
+        .collection("db_maintenance")
+        .update(item.id, {
+          redundan: nextValue,
+        });
+
+      await sendNotif({
+        title: "[Maintenance] Redundancy Updated",
+        page: "tracking",
+        message: `Redundancy updated for ${item.tag_name || item.judul}.`,
+        action: "update",
+        collection: "db_maintenance",
+        record_id: item.id,
+      });
+
+      setDetailItem((current) =>
+        current?.id === item.id
+          ? {
+              ...current,
+              redundan: nextValue,
+              updated: updatedItem.updated ?? current.updated,
+            }
+          : current,
+      );
+      onDataChanged?.();
+      setRedundanTarget(null);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update redundancy");
+    } finally {
+      setUpdatingRedundanId(null);
+    }
+  };
+
   const handleCardClick = (
     item: ListData,
     event: React.MouseEvent<HTMLDivElement>,
@@ -1270,17 +1331,33 @@ export default function MaintenanceCardList({
                     tag={detailItem.tag_name}
                     unit={detailItem.unit}
                   />
-                  {detailItem.redundan && detailItem.redundan !== "none" && (
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
-                        detailItem.redundan === "n+0" 
-                          ? "bg-red-500 text-white" 
-                          : "bg-emerald-500 text-white"
+                  <div className="flex items-center gap-1">
+                    <select
+                      value={detailItem.redundan || "none"}
+                      onChange={(event) =>
+                        handleRedundanChange(
+                          detailItem,
+                          event.currentTarget.value,
+                        )
+                      }
+                      disabled={updatingRedundanId === detailItem.id}
+                      className={`h-6 cursor-pointer rounded-full border py-0 pl-2.5 pr-6 text-[10px] font-bold uppercase tracking-wide shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70 ${
+                        detailItem.redundan === "n+0"
+                          ? "border-red-400 bg-red-500 text-white"
+                          : "border-slate-200 bg-slate-100 text-slate-500"
                       }`}
+                      aria-label={`Edit redundancy for ${detailItem.judul}`}
                     >
-                      {detailItem.redundan}
-                    </span>
-                  )}
+                      {["none", "n+0"].map((item) => (
+                        <option key={item} value={item} className="bg-white text-slate-700">
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    {updatingRedundanId === detailItem.id && (
+                      <Loader2 size={14} className="animate-spin text-sky-600" />
+                    )}
+                  </div>
                 </div>
 
                 {editingTitleId === detailItem.id ? (
@@ -2073,6 +2150,73 @@ export default function MaintenanceCardList({
             </div>
           </div>
         )}
-      </>
-    );
-  }
+      {redundanTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setRedundanTarget(null)}
+          />
+          <div className="relative w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
+                <Save size={24} />
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Confirm Update
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Are you sure you want to change redundancy for{" "}
+                  <span className="font-semibold text-sky-900">
+                    {redundanTarget.item.judul}
+                  </span>{" "}
+                  from{" "}
+                  <span className="font-semibold text-sky-900">
+                    {redundanTarget.item.redundan || "none"}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-sky-900">
+                    {redundanTarget.nextValue}
+                  </span>
+                  ?
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRedundanTarget(null)}
+                disabled={updatingRedundanId === redundanTarget.item.id}
+                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmRedundanChange}
+                disabled={updatingRedundanId === redundanTarget.item.id}
+                className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updatingRedundanId === redundanTarget.item.id ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Confirm Update"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -504,14 +504,11 @@ const ListKerusakanPage: React.FC = () => {
         <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
           {(() => {
             const hasAnyRedundanN0 = unitCountsBaseData.some((item) => item.redundan === "n+0");
-            const hasAnyRedundanN1 = unitCountsBaseData.some((item) => item.redundan === "n+1");
             const active = selectedUnit === "";
 
             let glowClass = "bg-emerald-50 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)]";
             if (hasAnyRedundanN0) {
               glowClass = "bg-red-50 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
-            } else if (hasAnyRedundanN1) {
-              glowClass = "bg-orange-50 border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.4)] hover:shadow-[0_0_20px_rgba(249,115,22,0.6)]";
             }
 
             return (
@@ -560,15 +557,12 @@ const ListKerusakanPage: React.FC = () => {
             const unitItems = unitCountsBaseData.filter((item) => item.unit === unit);
             const count = unitItems.length;
             const hasRedundanN0 = unitItems.some((item) => item.redundan === "n+0");
-            const hasRedundanN1 = unitItems.some((item) => item.redundan === "n+1");
             const color = getUnitColorPalette(unit);
             const active = selectedUnit === unit;
 
             let glowClass = "bg-emerald-50 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)]";
             if (hasRedundanN0) {
               glowClass = "bg-red-50 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
-            } else if (hasRedundanN1) {
-              glowClass = "bg-orange-50 border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.4)] hover:shadow-[0_0_20px_rgba(249,115,22,0.6)]";
             }
 
             return (

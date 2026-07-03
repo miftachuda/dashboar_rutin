@@ -61,6 +61,7 @@ export default function Progress() {
           .collection("turnaround2028")
           .getFullList({
             sort: "tag",
+            filter: "isDeleted = false",
           });
 
         if (active) {

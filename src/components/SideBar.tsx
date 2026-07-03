@@ -156,7 +156,7 @@ export default function Sidebar({
         h-auto
         md:h-screen
         shrink-0
-        z-30
+        z-50
         transition-all
         duration-300
         flex

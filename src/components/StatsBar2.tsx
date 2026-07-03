@@ -60,9 +60,17 @@ export function StatsBar2({ tasks }: StatsBar2Props) {
   };
 
   const isTaskComplete = (task: StepTask) => {
-    return task.steps?.every((group) =>
-      group.steplist?.every((step) => step.progress === 100),
-    );
+    if (!task.steps || task.steps.length === 0) return false;
+    let hasAnySteps = false;
+    for (const group of task.steps) {
+      if (group.steplist && group.steplist.length > 0) {
+        hasAnySteps = true;
+        for (const step of group.steplist) {
+          if (step.progress !== 100) return false;
+        }
+      }
+    }
+    return hasAnySteps;
   };
 
   const getEquipmentTypeStats = (type: EquipmentType) => {

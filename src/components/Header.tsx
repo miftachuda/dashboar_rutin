@@ -106,7 +106,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-sm">
       <div className="max-w-8xl mx-auto flex min-h-14 items-center gap-3 px-3 py-2 sm:h-16 sm:px-6 lg:px-8">
           <div className="min-w-0">
             <h1 className="font-display text-sm font-bold leading-tight text-foreground sm:text-lg">

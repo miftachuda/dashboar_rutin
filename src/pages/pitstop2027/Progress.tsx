@@ -59,6 +59,7 @@ export default function Progress() {
       try {
         const pitstopRecords = await pb.collection("pitstop2027").getFullList({
           sort: "tag",
+          filter: "isDeleted = false",
         });
 
         if (active) {

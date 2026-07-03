@@ -38,7 +38,7 @@ const typeOptions = [
   "Burner",
   "Flange",
 ];
-const redundanOptions = ["none", "n+0", "n+1"];
+const redundanOptions = ["none", "n+0"];
 
 type Props = {
   open: boolean;

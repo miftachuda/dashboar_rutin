@@ -36,9 +36,19 @@ export function StatsBar({ tasks }: StatsBarProps) {
     0,
   );
 
-  const completedEquipments = tasks.filter((t) =>
-    t.steps.every((s) => s.steplist.every((i) => i.status === "completed")),
-  ).length;
+  const completedEquipments = tasks.filter((t) => {
+    if (!t.steps || t.steps.length === 0) return false;
+    let hasAnySteps = false;
+    for (const group of t.steps) {
+      if (group.steplist && group.steplist.length > 0) {
+        hasAnySteps = true;
+        for (const step of group.steplist) {
+          if (step.status !== "completed") return false;
+        }
+      }
+    }
+    return hasAnySteps;
+  }).length;
 
   const overallPercent = (
     totalEquipments > 0 ? (completedEquipments / totalEquipments) * 100 : 0
