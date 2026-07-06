@@ -18,12 +18,16 @@ import { StepAdditional } from "@/components/StepAdditionals";
 import { AddStatbar } from "@/components/AddStatBar";
 import ReportTable from "@/components/ReportTable";
 import ExportTable from "@/components/ExportTable";
+import AddJoblistModal from "@/components/AddJoblistModal";
+import { Plus } from "lucide-react";
+
 export const equipmentTypes: EquipmentType[] = ["Heat Exchanger", "Piping"];
 export default function AdditionalsJoblist() {
   const [tasks, setTasks] = useState<StepTask[]>([]);
   const [search, setSearch] = useState("");
   const [prefixFilter, setPrefixFilter] = useState<string | null>(null);
   const [selectedType, setselectedType] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const cycleStatus = (current: StepStatus): StepStatus => {
@@ -140,6 +144,17 @@ export default function AdditionalsJoblist() {
     } catch (err) {
       updateTaskState(taskId, { isSaving: false });
       toast.error("Failed to save changes");
+    }
+  };
+
+  const handleDeleteJoblist = async (taskId: string) => {
+    try {
+      await pb.collection("additionals_ta2028").delete(taskId);
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      toast.success("Joblist deleted successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete joblist");
     }
   };
   function recordToStepTask(r: any): StepTask {
@@ -298,7 +313,7 @@ export default function AdditionalsJoblist() {
         {/* Content */}
         <main className="max-w-8xl  px-4 sm:px-6 lg:px-8 py-8">
           <AddStatbar tasks={tasks} />
-          <div className="mt-4 mb-6">
+          <div className="mt-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <input
               type="text"
               placeholder="Search joblist..."
@@ -306,6 +321,13 @@ export default function AdditionalsJoblist() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full md:w-96 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">Add Joblist</span>
+            </button>
           </div>
           <div className="flex flex-wrap gap-4 mt-1 mb-2">
             {allPrefixes.map((p) => {
@@ -395,13 +417,21 @@ export default function AdditionalsJoblist() {
                     state={taskStates[task.id] || {}}
                     updateTaskState={updateTaskState}
                     onSave={handleSave}
+                    onDeleteJoblist={handleDeleteJoblist}
                     colID="additionals_ta2028"
                   />
                 ))}
               </div>
             </div>
           )}
-          </main>
-        </div>
+        </main>
+
+        <AddJoblistModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSaved={loadTasks}
+          collectionName="additionals_ta2028"
+        />
+      </div>
   );
 }

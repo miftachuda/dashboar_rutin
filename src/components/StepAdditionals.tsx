@@ -4,7 +4,7 @@ import {
   Priority,
   EquipmentType,
 } from "@/types/maintenance";
-import { Check, Circle, Hourglass } from "lucide-react";
+import { Check, Circle, Hourglass, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import DateRange from "./DateRange";
 import { formatDistanceToNow, set } from "date-fns";
@@ -19,6 +19,72 @@ import ImagePreviewRow from "./ImagePreview";
 import MinImagePreviewRow from "./MinImagePreview";
 import CircularProgress from "./CircuralMin";
 
+function ItemMenu({
+  onEdit,
+  onAdd,
+  onDelete,
+}: {
+  onEdit?: () => void;
+  onAdd?: () => void;
+  onDelete?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        className="flex items-center justify-center w-6 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+        title="More options"
+      >
+        <MoreVertical size={14} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-32 rounded-lg border bg-popover shadow-lg z-50 p-1 flex flex-col gap-1 overflow-hidden">
+          {onAdd && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpen(false); onAdd(); }}
+              className="flex items-center gap-2 w-full text-left px-2 py-1.5 text-xs text-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+            >
+              <Check size={14} />
+              Add Item
+            </button>
+          )}
+          {onEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpen(false); onEdit(); }}
+              className="flex items-center gap-2 w-full text-left px-2 py-1.5 text-xs text-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpen(false); onDelete(); }}
+              className="flex items-center gap-2 w-full text-left px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface StepAdditionalProps {
   task: StepTask;
   onStepToggle: (taskId: string, stepId: string, itemId: string) => void;
@@ -31,6 +97,7 @@ interface StepAdditionalProps {
   updateTaskState: (taskId: string, state: any) => void;
   onSave: (taskId: string) => void;
   colID: string;
+  onDeleteJoblist?: (taskId: string) => void;
 }
 
 const priorityClasses: Record<Priority, string> = {
@@ -80,6 +147,7 @@ export function StepAdditional({
   updateTaskState,
   onSave,
   colID,
+  onDeleteJoblist,
 }: StepAdditionalProps) {
   const [openSteps, setOpenSteps] = useState<Record<string, boolean>>({});
 
@@ -307,6 +375,134 @@ export function StepAdditional({
     }
   };
 
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [stepNameDraft, setStepNameDraft] = useState("");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [itemTitleDraft, setItemTitleDraft] = useState("");
+
+  type DeleteTarget = { type: "step"; id: string } | { type: "item"; stepId: string; id: string } | { type: "joblist" } | null;
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const handleDeleteStep = (stepId: string) => {
+    updateTaskState(task.id, { isDirty: true, isSaved: false });
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? { ...t, steps: t.steps.filter((s) => s.id !== stepId) }
+          : t,
+      ),
+    );
+  };
+
+  const handleDeleteSteplistItem = (stepId: string, itemId: string) => {
+    updateTaskState(task.id, { isDirty: true, isSaved: false });
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              steps: t.steps.map((s) =>
+                s.id === stepId
+                  ? { ...s, steplist: s.steplist.filter((i) => i.id !== itemId) }
+                  : s,
+              ),
+            }
+          : t,
+      ),
+    );
+  };
+
+  const startEditStep = (stepId: string, currentName: string) => {
+    setEditingStepId(stepId);
+    setStepNameDraft(currentName);
+  };
+  const cancelEditStep = () => {
+    setEditingStepId(null);
+    setStepNameDraft("");
+  };
+  const saveEditStep = (stepId: string) => {
+    if (!stepNameDraft.trim()) {
+      cancelEditStep();
+      return;
+    }
+    updateTaskState(task.id, { isDirty: true, isSaved: false });
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              steps: t.steps.map((s) =>
+                s.id === stepId ? { ...s, stepname: stepNameDraft.trim() } : s,
+              ),
+            }
+          : t,
+      ),
+    );
+    cancelEditStep();
+  };
+
+  const startEditItem = (itemId: string, currentTitle: string) => {
+    setEditingItemId(itemId);
+    setItemTitleDraft(currentTitle);
+  };
+  const cancelEditItem = () => {
+    setEditingItemId(null);
+    setItemTitleDraft("");
+  };
+  const saveEditItem = (stepId: string, itemId: string) => {
+    if (!itemTitleDraft.trim()) {
+      cancelEditItem();
+      return;
+    }
+    updateTaskState(task.id, { isDirty: true, isSaved: false });
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              steps: t.steps.map((s) =>
+                s.id === stepId
+                  ? {
+                      ...s,
+                      steplist: s.steplist.map((i) =>
+                        i.id === itemId ? { ...i, steptitle: itemTitleDraft.trim() } : i,
+                      ),
+                    }
+                  : s,
+              ),
+            }
+          : t,
+      ),
+    );
+    cancelEditItem();
+  };
+
+  const addSteplistItem = (stepId: string) => {
+    const newItem = {
+      id: crypto.randomUUID(),
+      steptitle: "New Item",
+      description: "",
+      progress: 0,
+      status: "not yet" as const,
+    };
+    updateTaskState(task.id, { isDirty: true, isSaved: false });
+    setOpenSteps((prev) => ({ ...prev, [stepId]: true }));
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              steps: t.steps.map((s) =>
+                s.id === stepId ? { ...s, steplist: [...s.steplist, newItem] } : s,
+              ),
+            }
+          : t,
+      ),
+    );
+    startEditItem(newItem.id, "");
+  };
+
   return (
     <div className="bg-card rounded-xl border p-3 hover:shadow-lg transition-shadow duration-300">
       {/* Header */}
@@ -364,6 +560,14 @@ export function StepAdditional({
                     ? "Save"
                     : "Saved"}
             </button>
+            {onDeleteJoblist && (
+              <button
+                onClick={() => setDeleteTarget({ type: "joblist" })}
+                className="text-[10px] font-mono px-2 py-1 select-none rounded-md bg-red-100 text-red-500 hover:bg-red-200 transition"
+              >
+                Delete
+              </button>
+            )}
           </div>
           <div className="mr-3">
             <p className="text-sm text-blue-800 font-mono mt-0.5">
@@ -393,23 +597,60 @@ export function StepAdditional({
 
           return (
             <div key={step.id} className="rounded-lg p-1">
-              <div>
+              <div className="flex items-center justify-between px-3 mb-1">
                 <button
                   onClick={() => toggleStep(step.id)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1 hover:text-foreground"
+                  className="flex flex-1 items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 >
-                  <div className="flex flex-row">
-                    <span>{step.stepname}</span>
-                  </div>
-
-                  {openSteps[step.id] ? (
-                    <ChevronDown className="w-4 h-4" />
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${openSteps[step.id] ? "" : "-rotate-90"}`}
+                  />
+                  {editingStepId === step.id ? (
+                    <input
+                      autoFocus
+                      value={stepNameDraft}
+                      onChange={(e) => setStepNameDraft(e.target.value)}
+                      onBlur={() => saveEditStep(step.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEditStep(step.id);
+                        if (e.key === "Escape") cancelEditStep();
+                        e.stopPropagation();
+                      }}
+                      className="flex-1 rounded border border-sky-300 bg-white px-2 py-0.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-sky-400"
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   ) : (
-                    <ChevronRight className="w-4 h-4" />
+                    <span
+                      className="flex-1 text-left font-bold"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        startEditStep(step.id, step.stepname);
+                      }}
+                    >
+                      {step.stepname || <span className="italic text-muted-foreground">Unnamed Step</span>}
+                    </span>
                   )}
                 </button>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                      avgProgress === 100
+                        ? "border-green-500 bg-white text-green-600 shadow-[inset_0_0_6px_rgba(34,197,94,0.5)]"
+                        : "border-orange-400 bg-white text-orange-500 shadow-[inset_0_0_6px_rgba(251,146,60,0.5)]"
+                    }`}
+                  >
+                    {avgProgress.toFixed(2)}%
+                  </span>
+                  <ItemMenu
+                    onEdit={() => startEditStep(step.id, step.stepname)}
+                    onAdd={() => addSteplistItem(step.id)}
+                    onDelete={() => setDeleteTarget({ type: "step", id: step.id })}
+                  />
+                </div>
+              </div>
 
-                {openSteps[step.id] && (
+              {openSteps[step.id] && (
                   <div>
                     {step.steplist.map((item) => {
                       // 🔥 optional logic per item
@@ -420,19 +661,41 @@ export function StepAdditional({
                           key={item.id}
                           className="flex items-center ml-6 mr-2 mt-2 border gap-1 my-1 rounded-lg transition-colors text-left group"
                         >
-                          <div className="flex flex-col w-full">
-                            {/* HEADER */}
-                            <div className="flex items-center">
-                              <p
-                                className={`text-xs select-none text-wrap font-medium truncate ${
-                                  item.status === "completed"
-                                    ? "text-card-foreground"
-                                    : "text-muted-foreground"
-                                } px-3 pt-2 pb-1`}
-                              >
-                                {item.steptitle}
-                              </p>
+                        <div className="flex flex-col w-full">
+                          {/* HEADER */}
+                          <div className="flex items-center justify-between pr-2">
+                            <div className="flex items-center flex-1">
+                              {editingItemId === item.id ? (
+                                <input
+                                  autoFocus
+                                  value={itemTitleDraft}
+                                  onChange={(e) => setItemTitleDraft(e.target.value)}
+                                  onBlur={() => saveEditItem(step.id, item.id)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveEditItem(step.id, item.id);
+                                    if (e.key === "Escape") cancelEditItem();
+                                    e.stopPropagation();
+                                  }}
+                                  className="ml-2 mt-2 w-full rounded border border-sky-300 px-2 py-0.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-sky-400"
+                                />
+                              ) : (
+                                <p
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditItem(item.id, item.steptitle);
+                                  }}
+                                  className={`text-xs select-none text-wrap font-medium truncate ${
+                                    item.status === "completed"
+                                      ? "text-card-foreground"
+                                      : "text-muted-foreground"
+                                  } px-3 pt-2 pb-1`}
+                                >
+                                  {item.steptitle || <span className="italic">Unnamed Item</span>}
+                                </p>
+                              )}
+                            </div>
 
+                            <div className="flex items-center gap-2">
                               <div
                                 className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs font-semibold
                           ${item.status === "completed" ? "bg-success text-success-foreground" : ""}
@@ -448,7 +711,12 @@ export function StepAdditional({
                                   <Circle className="w-2 h-2" />
                                 )}
                               </div>
+                              <ItemMenu
+                                onEdit={() => startEditItem(item.id, item.steptitle)}
+                                onDelete={() => setDeleteTarget({ type: "item", stepId: step.id, id: item.id })}
+                              />
                             </div>
+                          </div>
 
                             {/* BODY */}
                             <div>
@@ -514,7 +782,6 @@ export function StepAdditional({
                     })}
                   </div>
                 )}
-              </div>
             </div>
           );
         })}
@@ -571,6 +838,55 @@ export function StepAdditional({
           </span>
         </div>
       </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => !confirmLoading && setDeleteTarget(null)}
+          />
+          <div className="relative w-full max-w-sm rounded-3xl border border-red-100 bg-white p-6 shadow-2xl">
+            <h2 className="mb-2 text-lg font-semibold">Confirm Delete</h2>
+            <p className="mb-6 text-sm text-slate-600">
+              {deleteTarget.type === "joblist"
+                ? "Delete this entire joblist? This cannot be undone."
+                : deleteTarget.type === "step"
+                ? "Delete this step and all its items? This cannot be undone."
+                : "Delete this steplist item? This cannot be undone."}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => !confirmLoading && setDeleteTarget(null)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                disabled={confirmLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setConfirmLoading(true);
+                  try {
+                    if (deleteTarget.type === "joblist") {
+                      if (onDeleteJoblist) await onDeleteJoblist(task.id);
+                    } else if (deleteTarget.type === "step") {
+                      handleDeleteStep(deleteTarget.id);
+                    } else if (deleteTarget.type === "item") {
+                      handleDeleteSteplistItem(deleteTarget.stepId, deleteTarget.id);
+                    }
+                  } finally {
+                    setConfirmLoading(false);
+                    setDeleteTarget(null);
+                  }
+                }}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-700 disabled:opacity-50"
+                disabled={confirmLoading}
+              >
+                {confirmLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

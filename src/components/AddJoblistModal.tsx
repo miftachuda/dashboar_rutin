@@ -18,7 +18,7 @@ type Props = {
   collectionName?: string;
 };
 
-const diciplineOptions = ["Rotating", "Stationary", "Instrument", "Electrical"];
+const disciplineOptions = ["Rotating", "Stationary", "Instrument", "Electrical"];
 const priorityOptions: Priority[] = ["low", "medium", "high", "critical"];
 
 const fieldDefaults = {
@@ -26,7 +26,7 @@ const fieldDefaults = {
   tag: "",
   job: "",
   type: "Heat Exchanger" as EquipmentType,
-  dicipline: "Rotating",
+  discipline: "Rotating",
   priority: "low" as Priority,
   assignee: "",
 };
@@ -167,7 +167,7 @@ export default function AddJoblistModal({ open, onClose, onSaved, collectionName
       formData.append("tag", form.tag.trim());
       formData.append("job", form.job.trim());
       formData.append("type", form.type);
-      formData.append("dicipline", form.dicipline);
+      formData.append("discipline", form.discipline);
       formData.append("priority", form.priority);
       formData.append("assignee", form.assignee.trim());
       formData.append("updatedCustom", new Date().toISOString());
@@ -293,15 +293,15 @@ export default function AddJoblistModal({ open, onClose, onSaved, collectionName
             </div>
             <div>
               <label className="block text-sm font-semibold text-sky-800 mb-1">
-                Dicipline
+                Discipline
               </label>
               <select
-                name="dicipline"
-                value={form.dicipline}
+                name="discipline"
+                value={form.discipline}
                 onChange={handleChange}
                 className="w-full rounded-lg border border-sky-200 bg-sky-50/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
               >
-                {diciplineOptions.map((d) => (
+                {disciplineOptions.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
