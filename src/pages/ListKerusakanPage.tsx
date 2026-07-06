@@ -11,6 +11,7 @@ import { ListData } from "@/types/listdata";
 import InputPopUp from "@/components/InputPopUp";
 import { getUnitColorPalette, getValueColorPalette } from "@/components/phill";
 import { WaktuPelaksanaan } from "@/types/enum";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 const disciplineKpiLabels = [
   "Stationary",
@@ -25,6 +26,26 @@ const waktuPelaksanaanFilterOptions: typeof WaktuPelaksanaan = [
   "Pit Stop",
   "Turn Around",
 ];
+
+const getDisciplinePopClass = (discipline: string) => {
+  switch (discipline.trim().toLowerCase()) {
+    case "stationary": return "bg-blue-500 text-white border-blue-600";
+    case "instrument": return "bg-emerald-500 text-white border-emerald-600";
+    case "electrical": return "bg-amber-500 text-white border-amber-600";
+    case "rotating": return "bg-purple-500 text-white border-purple-600";
+    default: return "bg-sky-500 text-white border-sky-600";
+  }
+};
+
+const getWaktuPelaksanaanPopClass = (waktu: string) => {
+  switch (waktu.trim().toLowerCase()) {
+    case "on stream": return "bg-green-500 text-white border-green-600";
+    case "pit stop": return "bg-amber-500 text-white border-amber-600";
+    case "turn around": return "bg-red-500 text-white border-red-600";
+    default: return "bg-slate-500 text-white border-slate-600";
+  }
+};
+
 type ExportRow = {
   no: number;
   imageData: string | null;
@@ -131,6 +152,22 @@ const ListKerusakanPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [exportingPdf, setExportingPdf] = useState(false);
 
+  const toggleSort = (field: string) => {
+    if (sortOption === field) {
+      setSortOption(`-${field}`);
+    } else {
+      setSortOption(field);
+    }
+  };
+
+  const sortableColumns = [
+    { key: "unit", label: "Unit" },
+    { key: "tag", label: "Tag" },
+    { key: "discipline", label: "Discipline" },
+    { key: "progress", label: "Progress" },
+    { key: "updated", label: "Last Updated" },
+  ];
+
   const progressStatusBaseData = listdata.filter((item) => {
     const matchesUnit = selectedUnit ? item.unit === selectedUnit : true;
     const matchesDiscipline = selectedDiscipline
@@ -230,21 +267,36 @@ const ListKerusakanPage: React.FC = () => {
       if (sortOption === "unit") {
         return sortByKnownOrder(unitFilterOptions)(left.unit, right.unit);
       }
-
       if (sortOption === "-unit") {
         return sortByKnownOrder(unitFilterOptions)(right.unit, left.unit);
       }
 
-      if (sortOption === "-updated") {
-        return (
-          new Date(right.updated).getTime() - new Date(left.updated).getTime()
-        );
+      if (sortOption === "tag") {
+        return left.tag_name.localeCompare(right.tag_name);
+      }
+      if (sortOption === "-tag") {
+        return right.tag_name.localeCompare(left.tag_name);
+      }
+
+      if (sortOption === "discipline") {
+        return sortByKnownOrder(disciplineKpiLabels)(left.discipline, right.discipline);
+      }
+      if (sortOption === "-discipline") {
+        return sortByKnownOrder(disciplineKpiLabels)(right.discipline, left.discipline);
+      }
+
+      if (sortOption === "progress") {
+        return left.progress - right.progress;
+      }
+      if (sortOption === "-progress") {
+        return right.progress - left.progress;
       }
 
       if (sortOption === "updated") {
-        return (
-          new Date(left.updated).getTime() - new Date(right.updated).getTime()
-        );
+        return new Date(left.updated).getTime() - new Date(right.updated).getTime();
+      }
+      if (sortOption === "-updated") {
+        return new Date(right.updated).getTime() - new Date(left.updated).getTime();
       }
 
       return 0;
@@ -610,34 +662,6 @@ const ListKerusakanPage: React.FC = () => {
         </div>
 
         <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="
-              bg-white/40
-                border
-              border-sky-200
-              text-sky-800
-                rounded-sm
-                px-3
-                py-2
-                text-sm
-                font-medium
-                shadow-sm
-                backdrop-blur-sm
-                hover:bg-sky-100
-                focus:outline-none
-                focus:ring-2
-                focus:ring-sky-300
-                transition-all
-                duration-200
-              "
-          >
-            <option value="unit">Unit Ascending</option>
-            <option value="-unit">Unit Descending</option>
-            <option value="-updated">Latest Updated</option>
-            <option value="updated">Oldest Updated</option>
-          </select>
           <button
             onClick={() => setOpenModal(true)}
             className="
@@ -704,7 +728,7 @@ const ListKerusakanPage: React.FC = () => {
 
             {disciplineKpiLabels.map((discipline) => {
               const count = disciplineBaseData.filter((item) => item.discipline === discipline).length;
-              const color = getValueColorPalette(discipline);
+              const popClass = getDisciplinePopClass(discipline);
               const active = selectedDiscipline === discipline;
 
               return (
@@ -717,7 +741,7 @@ const ListKerusakanPage: React.FC = () => {
                   aria-pressed={active}
                   className={`${filterButtonBaseClass} ${
                     active
-                      ? `${color.border} ${color.background} ${color.text} shadow-lg`
+                      ? `${popClass} shadow-lg`
                       : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
@@ -725,7 +749,7 @@ const ListKerusakanPage: React.FC = () => {
                   <span
                     className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
                       active
-                        ? "bg-white/60 text-current"
+                        ? "bg-white/20 text-white"
                         : "bg-slate-200 text-slate-500"
                     }`}
                   >
@@ -763,7 +787,7 @@ const ListKerusakanPage: React.FC = () => {
 
             {waktuPelaksanaanFilterOptions.map((waktuPelaksanaan) => {
               const count = waktuBaseData.filter((item) => item.waktu_pelaksanaan === waktuPelaksanaan).length;
-              const softClass = getWaktuPelaksanaanRibbonClass(waktuPelaksanaan);
+              const popClass = getWaktuPelaksanaanPopClass(waktuPelaksanaan);
               const active = selectedWaktuPelaksanaan === waktuPelaksanaan;
 
               return (
@@ -776,15 +800,15 @@ const ListKerusakanPage: React.FC = () => {
                   aria-pressed={active}
                   className={`${filterButtonBaseClass} ${
                     active
-                      ? `${softClass} shadow-lg`
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? `${popClass} shadow-lg`
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   {waktuPelaksanaan}
                   <span
                     className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
                       active
-                        ? "bg-white/60 text-current"
+                        ? "bg-white/20 text-white"
                         : "bg-slate-200 text-slate-500"
                     }`}
                   >
@@ -861,6 +885,33 @@ const ListKerusakanPage: React.FC = () => {
             placeholder="Search by title, issue, discipline, type, unit, tag, reference..."
             className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-4 py-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-sky-300"
           />
+        </div>
+
+        <div className="flex w-full items-center gap-2 rounded-2xl bg-white p-2 shadow-sm border border-sky-100 overflow-x-auto scrollbar-hide">
+          <span className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider shrink-0">Sort by:</span>
+          <div className="flex flex-1 items-center gap-2">
+            {sortableColumns.map(col => {
+              const isAsc = sortOption === col.key;
+              const isDesc = sortOption === `-${col.key}`;
+              const isActive = isAsc || isDesc;
+              
+              return (
+                <button
+                  key={col.key}
+                  onClick={() => toggleSort(col.key)}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wide transition-all ${
+                    isActive ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200" : "bg-transparent text-slate-500 border border-transparent hover:bg-slate-50"
+                  }`}
+                >
+                  {col.label}
+                  <div className="flex flex-col -space-y-[0.3rem] opacity-70">
+                    <ChevronUp size={12} className={isAsc ? "text-sky-700 opacity-100 stroke-[3px]" : "opacity-40"} />
+                    <ChevronDown size={12} className={isDesc ? "text-sky-700 opacity-100 stroke-[3px]" : "opacity-40"} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <InputPopUp

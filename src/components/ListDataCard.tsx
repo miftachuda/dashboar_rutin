@@ -318,6 +318,14 @@ export default function MaintenanceCardList({
   >(null);
   const [timelineSavingId, setTimelineSavingId] = useState<string | null>(null);
   const [timelineError, setTimelineError] = useState("");
+
+  const [editingTimelineId, setEditingTimelineId] = useState<string | null>(null);
+  const [timelineEditDraft, setTimelineEditDraft] = useState("");
+  const [updatingTimelineId, setUpdatingTimelineId] = useState<string | null>(null);
+  const [deleteTimelineTarget, setDeleteTimelineTarget] = useState<{
+    item: ListData;
+    pointId: string;
+  } | null>(null);
   const [detailProgressValue, setDetailProgressValue] = useState<number | null>(
     null,
   );
@@ -582,6 +590,79 @@ export default function MaintenanceCardList({
       alert("Failed to add timeline");
     } finally {
       setTimelineSavingId(null);
+    }
+  };
+
+  const startEditTimeline = (point: TimelinePoint) => {
+    setEditingTimelineId(point.id);
+    setTimelineEditDraft(point.text);
+  };
+
+  const cancelEditTimeline = () => {
+    setEditingTimelineId(null);
+    setTimelineEditDraft("");
+  };
+
+  const handleSaveTimelineEdit = async (item: ListData, pointId: string) => {
+    const text = timelineEditDraft.trim();
+    if (!text) {
+      toast.error("Timeline text cannot be empty");
+      return;
+    }
+    try {
+      setUpdatingTimelineId(pointId);
+      const points = parseTimelinePoints(item.tracking);
+      const nextPoints = points.map(p => 
+        p.id === pointId ? { ...p, text, updatedAt: new Date().toISOString() } : p
+      );
+
+      const updatedItem = await pb.collection("db_maintenance").update(item.id, {
+        tracking: nextPoints,
+      });
+
+      setDetailItem((current) =>
+        current?.id === item.id ? { ...current, tracking: nextPoints } : current
+      );
+      onDataChanged?.();
+      cancelEditTimeline();
+      toast.success("Timeline updated");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update timeline point");
+    } finally {
+      setUpdatingTimelineId(null);
+    }
+  };
+
+  const handleDeleteTimeline = async () => {
+    if (!deleteTimelineTarget) return;
+    const { item, pointId } = deleteTimelineTarget;
+    try {
+      setUpdatingTimelineId(pointId);
+      const points = parseTimelinePoints(item.tracking);
+      const targetPoint = points.find(p => p.id === pointId);
+      
+      const nextPoints = points.filter(p => p.id !== pointId);
+
+      const updatedItem = await pb.collection("db_maintenance").update(item.id, {
+        tracking: nextPoints,
+      });
+
+      if (targetPoint?.photos?.length) {
+        // Optionally delete photos here if needed
+      }
+
+      setDetailItem((current) =>
+        current?.id === item.id ? { ...current, tracking: nextPoints } : current
+      );
+      onDataChanged?.();
+      toast.success("Timeline deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete timeline point");
+    } finally {
+      setUpdatingTimelineId(null);
+      setDeleteTimelineTarget(null);
     }
   };
 
@@ -1772,11 +1853,61 @@ export default function MaintenanceCardList({
                     detailTimelinePoints.map((point) => (
                       <div
                         key={point.id}
-                        className="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm"
+                        className="group relative rounded-2xl border border-sky-100 bg-white p-4 shadow-sm"
                       >
-                        <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                          {point.text}
-                        </p>
+                        <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={() => startEditTimeline(point)}
+                            disabled={updatingTimelineId === point.id}
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-sky-600 disabled:opacity-50"
+                            aria-label="Edit timeline"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTimelineTarget({ item: detailItem, pointId: point.id })}
+                            disabled={updatingTimelineId === point.id}
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600 disabled:opacity-50"
+                            aria-label="Delete timeline"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        
+                        {editingTimelineId === point.id ? (
+                          <div className="mt-1 flex flex-col gap-2">
+                            <textarea
+                              value={timelineEditDraft}
+                              onChange={(e) => setTimelineEditDraft(e.target.value)}
+                              rows={3}
+                              className="w-full resize-none rounded-xl border border-sky-200 bg-slate-50 p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-300"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={cancelEditTimeline}
+                                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveTimelineEdit(detailItem, point.id)}
+                                disabled={updatingTimelineId === point.id}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+                              >
+                                {updatingTimelineId === point.id && <Loader2 size={12} className="animate-spin" />}
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap pr-12 text-sm leading-6 text-slate-700">
+                            {point.text}
+                          </p>
+                        )}
 
                         {point.photos.length > 0 && (
                           <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -2211,6 +2342,69 @@ export default function MaintenanceCardList({
                   </>
                 ) : (
                   "Confirm Update"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTimelineTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="absolute inset-0 transition-opacity"
+            onClick={() => {
+              if (updatingTimelineId !== deleteTimelineTarget.pointId) {
+                setDeleteTimelineTarget(null);
+              }
+            }}
+          />
+          <div className="relative w-full max-w-md rounded-3xl border border-red-100 bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-red-50 p-3 text-red-600">
+                <Trash2 size={24} />
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Delete Timeline Point?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Are you sure you want to delete this timeline point? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTimelineTarget(null)}
+                disabled={updatingTimelineId === deleteTimelineTarget.pointId}
+                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteTimeline}
+                disabled={updatingTimelineId === deleteTimelineTarget.pointId}
+                className="inline-flex items-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updatingTimelineId === deleteTimelineTarget.pointId ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
                 )}
               </button>
             </div>
