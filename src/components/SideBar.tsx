@@ -10,6 +10,7 @@ import {
   ChevronRight,
   FlaskConical,
   Activity,
+  Gauge,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -62,8 +63,14 @@ export default function Sidebar({
       section: "MAIN MENU",
       items: [
         {
-          name: "Tracking",
+          name: "Dashboard",
           path: "/",
+          icon: Gauge,
+          badge: null,
+        },
+        {
+          name: "Tracking",
+          path: "/joblist",
           icon: LayoutDashboard,
           badge: null,
         },

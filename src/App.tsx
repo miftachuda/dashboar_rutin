@@ -7,6 +7,7 @@ import NotFound from "./pages/NotFound.tsx";
 import MaterialPage from "./pages/Materials.tsx";
 import ChemicalPage from "./pages/Chemicals.tsx";
 import ListKerusakanPage from "./pages/ListKerusakanPage.tsx";
+import UnitDashboardPage from "./pages/UnitDashboardPage.tsx";
 import SettingPage from "./pages/SettingPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import TankTrend from "./pages/TankTrend.tsx";
@@ -23,7 +24,8 @@ const App = () => (
     <TooltipProvider>
       <HashRouter>
         <Routes>
-          <Route path="/" element={<ListKerusakanPage />} />
+          <Route path="/" element={<UnitDashboardPage />} />
+          <Route path="/joblist" element={<ListKerusakanPage />} />
           <Route path="/material" element={<MaterialPage />} />
           <Route path="/chemical" element={<ChemicalPage />} />
           <Route path="/lims" element={<Lims />} />

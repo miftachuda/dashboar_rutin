@@ -145,7 +145,8 @@ const SampleGroups: React.FC<{
   data: any;
   loading?: boolean;
   limit: SampleLimit[];
-}> = ({ data, loading = false, limit }) => {
+  onlyOOS?: boolean;
+}> = ({ data, loading = false, limit, onlyOOS = false }) => {
   // ✅ ALL HOOKS MUST ALWAYS RUN
   const [mode023, setMode023] = useState<TagData[] | null>(null);
   const [mode024, setMode024] = useState<TagData[] | null>(null);
@@ -174,7 +175,7 @@ const SampleGroups: React.FC<{
   // ✅ SAFE CONDITIONAL RENDER AFTER HOOKS
   if (loading || !data?.samples) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center rounded-3xl border border-sky-100 bg-white text-slate-500 shadow-sm">
+      <div className={`flex items-center justify-center rounded-3xl border border-sky-100 bg-white text-slate-500 shadow-sm ${onlyOOS ? 'min-h-[120px]' : 'min-h-[50vh]'}`}>
         <div className="flex flex-col items-center">
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-4 border-sky-100 border-t-sky-500" />
           <p>Loading data...</p>
@@ -184,184 +185,142 @@ const SampleGroups: React.FC<{
   }
 
   return (
-    <div className="min-h-screen p-2 text-slate-700">
+    <div className="p-2 text-slate-700 w-full h-full">
       <h1 className="mb-3 text-center text-xl font-semibold text-sky-950">
         Shift <span className="text-sky-600">{data.shift}</span>
       </h1>
 
       <div className="space-y-4">
-        {Object.entries(grouped).map(([prefix, groupSamples], idx) => (
-          <div
-            key={prefix}
-            className={`rounded-3xl border bg-white p-4 shadow-md ${
-              groupColors[idx % groupColors.length]
-            }`}
-          >
-            <h2 className="mb-3 text-center text-lg font-bold text-sky-950">
-              Unit {prefix}
-              {prefix === "023"
-                ? ` ${feed023}`
-                : prefix === "024"
-                  ? ` ${feed024}`
-                  : ""}
-            </h2>
+        {(() => {
+          let renderedGroups = 0;
+          const elements = Object.entries(grouped).map(([prefix, groupSamples], idx) => {
+            const validSamples = [];
 
-            <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
-              {Object.entries(groupSamples).map(
-                ([sampleId, sampleData]: any) => {
-                  const { sampleName, ...properties } = sampleData;
+            for (const [sampleIdOriginal, sampleData] of Object.entries(groupSamples as any)) {
+              const { sampleName, ...properties } = sampleData as any;
+              
+              let effectiveSampleId = sampleIdOriginal;
+              if (mode023 && effectiveSampleId.startsWith("023")) {
+                if (feed023 === "MMO" && !effectiveSampleId.endsWith("M")) effectiveSampleId += "M";
+                else if (feed023 === "DAO" && !effectiveSampleId.endsWith("D")) effectiveSampleId += "D";
+              }
+              if (mode024 && effectiveSampleId.startsWith("024")) {
+                if (feed024 === "MMO" && !effectiveSampleId.endsWith("M")) effectiveSampleId += "M";
+                else if (feed024 === "DAO" && !effectiveSampleId.endsWith("D")) effectiveSampleId += "D";
+              }
 
-                  return (
-                    <div
-                      key={sampleId}
-                      className="rounded-2xl border border-sky-100 bg-sky-50/50 text-xs shadow-sm"
-                    >
+              const processedProps = [];
+              let hasOOS = false;
+
+              for (const [propName, prop] of Object.entries(properties)) {
+                const limitValue = getLimitBySampleAndParam(limit, effectiveSampleId, propName);
+                let valueClass = "text-slate-800";
+
+                if (limitValue?.isNumber) {
+                  const value = Number((prop as any).value);
+                  const low = parseLimit(limitValue?.low_limit);
+                  const high = parseLimit(limitValue?.high_limit);
+                  const out = (!isNaN(low) && value < low) || (!isNaN(high) && value > high);
+                  valueClass = out ? "text-red-600" : "text-emerald-600";
+                } else if (propName === "Color") {
+                  const isPass = isASTMWithinMax((prop as any).value, limitValue?.high_limit as string);
+                  valueClass = isPass ? "text-emerald-600" : "text-red-600";
+                } else if (propName === "App") {
+                  const isPass = String((prop as any).value).toLowerCase() === String(limitValue?.low_limit).toLowerCase();
+                  valueClass = isPass ? "text-emerald-600" : "text-red-600";
+                }
+
+                const isOOS = valueClass === "text-red-600";
+                if (isOOS) hasOOS = true;
+
+                if (!onlyOOS || isOOS) {
+                  processedProps.push({ propName, prop, limitValue, valueClass });
+                }
+              }
+
+              if (!onlyOOS || hasOOS) {
+                validSamples.push({ sampleIdOriginal, sampleName, processedProps });
+              }
+            }
+
+            if (validSamples.length === 0) return null;
+            renderedGroups++;
+
+            return (
+              <div
+                key={prefix}
+                className={`rounded-3xl border bg-white p-4 shadow-md ${groupColors[idx % groupColors.length]}`}
+              >
+                <h2 className="mb-3 text-center text-lg font-bold text-sky-950">
+                  Unit {prefix}
+                  {prefix === "023" ? ` ${feed023 || ""}` : prefix === "024" ? ` ${feed024 || ""}` : ""}
+                </h2>
+
+                <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
+                  {validSamples.map(({ sampleIdOriginal, sampleName, processedProps }) => (
+                    <div key={sampleIdOriginal as string} className="rounded-2xl border border-sky-100 bg-sky-50/50 text-xs shadow-sm">
                       <div className="p-4 pb-1">
                         <div className="flex flex-col font-semibold leading-none tracking-tight">
-                          <span className="truncate text-sky-800">
-                            {sampleName}
-                          </span>
-                          <span className="text-[15px] text-slate-500">
-                            {sampleId}
-                          </span>
+                          <span className="truncate text-sky-800">{sampleName as string}</span>
+                          <span className="text-[15px] text-slate-500">{sampleIdOriginal as string}</span>
                         </div>
                       </div>
 
                       <div className="p-4 pt-1">
                         <div className="grid grid-cols-2 gap-1">
-                          {Object.entries(properties).map(
-                            ([propName, prop]: any) => {
-                              if (mode023 && sampleId.startsWith("023")) {
-                                if (
-                                  feed023 === "MMO" &&
-                                  !sampleId.endsWith("M")
-                                ) {
-                                  sampleId += "M";
-                                } else if (
-                                  feed023 === "DAO" &&
-                                  !sampleId.endsWith("D")
-                                ) {
-                                  sampleId += "D";
-                                }
-                              }
-                              if (mode024 && sampleId.startsWith("024")) {
-                                if (
-                                  feed024 === "MMO" &&
-                                  !sampleId.endsWith("M")
-                                ) {
-                                  sampleId += "M";
-                                } else if (
-                                  feed024 === "DAO" &&
-                                  !sampleId.endsWith("D")
-                                ) {
-                                  sampleId += "D";
-                                }
-                              }
-                              const limitValue = getLimitBySampleAndParam(
-                                limit,
-                                sampleId,
-                                propName,
-                              );
-
-                              let valueClass = "text-slate-800";
-
-                              if (limitValue?.isNumber) {
-                                const value = Number(prop.value);
-                                const low = parseLimit(limitValue?.low_limit);
-                                const high = parseLimit(limitValue?.high_limit);
-                                const out =
-                                  (!isNaN(low) && value < low) ||
-                                  (!isNaN(high) && value > high);
-
-                                valueClass = out
-                                  ? "text-red-600"
-                                  : "text-emerald-600";
-                              } else if (propName === "Color") {
-                                const isPass = isASTMWithinMax(
-                                  prop.value,
-                                  limitValue?.high_limit,
-                                );
-
-                                valueClass = isPass
-                                  ? "text-emerald-600"
-                                  : "text-red-600";
-                              } else if (propName === "App") {
-                                const isPass =
-                                  String(prop.value).toLowerCase() ===
-                                  String(limitValue?.low_limit).toLowerCase();
-
-                                valueClass = isPass
-                                  ? "text-emerald-600"
-                                  : "text-red-600";
-                              }
-
-                              return (
-                                <div
-                                  key={propName}
-                                  className="rounded-xl border border-white bg-white p-2 shadow-sm"
-                                >
-                                  <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                    {propName}
-                                  </div>
-                                  <div
-                                    className={`font-semibold text-[12px] ${valueClass}`}
-                                  >
-                                    {prop.value}
-                                    {prop.unit && (
-                                      <span className="ml-1 text-[11px] text-slate-400">
-                                        {prop.unit}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {limitValue && (
-                                    <div className="flex flex-col text-[11px] text-slate-500">
-                                      <span className="font-semibold text-sky-600">
-                                        Spec:
-                                      </span>
-
-                                      {!limitValue?.low_limit &&
-                                      !limitValue?.high_limit ? (
-                                        "N/A"
-                                      ) : limitValue?.low_limit &&
-                                        limitValue?.high_limit ? (
-                                        <>
-                                          {limitValue.low_limit}
-                                          {" <> "}
-                                          {limitValue.high_limit}
-                                        </>
-                                      ) : limitValue?.low_limit ? (
-                                        limitValue?.isNumber ? (
-                                          <span>
-                                            Min: {limitValue.low_limit}
-                                          </span>
-                                        ) : (
-                                          limitValue.low_limit
-                                        )
-                                      ) : limitValue?.isNumber ? (
-                                        <span>
-                                          Max: {limitValue.high_limit}
-                                        </span>
-                                      ) : (
-                                        limitValue.high_limit
-                                      )}
-                                    </div>
+                          {processedProps.map(({ propName, prop, limitValue, valueClass }: any) => (
+                            <div key={propName} className="rounded-xl border border-white bg-white p-2 shadow-sm">
+                              <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                {propName}
+                              </div>
+                              <div className={`font-semibold text-[12px] ${valueClass}`}>
+                                {prop.value}
+                                {prop.unit && <span className="ml-1 text-[11px] text-slate-400">{prop.unit}</span>}
+                              </div>
+                              {limitValue && (
+                                <div className="flex flex-col text-[11px] text-slate-500">
+                                  <span className="font-semibold text-sky-600">Spec:</span>
+                                  {!limitValue?.low_limit && !limitValue?.high_limit ? (
+                                    "N/A"
+                                  ) : limitValue?.low_limit && limitValue?.high_limit ? (
+                                    <>
+                                      {limitValue.low_limit} {" <> "} {limitValue.high_limit}
+                                    </>
+                                  ) : limitValue?.low_limit ? (
+                                    limitValue?.isNumber ? <span>Min: {limitValue.low_limit}</span> : limitValue.low_limit
+                                  ) : limitValue?.isNumber ? (
+                                    <span>Max: {limitValue.high_limit}</span>
+                                  ) : (
+                                    limitValue.high_limit
                                   )}
                                 </div>
-                              );
-                            },
-                          )}
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
-                  );
-                },
-              )}
-            </div>
-          </div>
-        ))}
+                  ))}
+                </div>
+              </div>
+            );
+          });
+
+          if (onlyOOS && renderedGroups === 0) {
+            return (
+              <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 flex flex-col items-center justify-center text-center gap-2 w-full h-full">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 text-xl font-bold">✓</div>
+                <p className="font-bold text-emerald-800">All Samples In-Spec</p>
+                <p className="text-xs text-emerald-600">No out-of-spec samples detected in the current shift.</p>
+              </div>
+            );
+          }
+
+          return elements;
+        })()}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default SampleGroups;

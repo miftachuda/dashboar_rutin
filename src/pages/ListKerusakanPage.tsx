@@ -12,6 +12,7 @@ import InputPopUp from "@/components/InputPopUp";
 import { getUnitColorPalette, getValueColorPalette } from "@/components/phill";
 import { WaktuPelaksanaan } from "@/types/enum";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 const disciplineKpiLabels = [
   "Stationary",
@@ -143,8 +144,17 @@ const ListKerusakanPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [sortOption, setSortOption] = useState("unit");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUnit, setSelectedUnit] = useState("");
+  const [searchParams] = useSearchParams();
+  const [selectedUnit, setSelectedUnit] = useState(searchParams.get("unit") || "");
   const [selectedDiscipline, setSelectedDiscipline] = useState("");
+  
+  useEffect(() => {
+    const unitParam = searchParams.get("unit");
+    if (unitParam !== null) {
+      setSelectedUnit(unitParam);
+    }
+  }, [searchParams]);
+
   const [selectedWaktuPelaksanaan, setSelectedWaktuPelaksanaan] = useState("");
   const [selectedProgressStatus, setSelectedProgressStatus] =
     useState<ProgressStatusFilter>("all");
@@ -553,114 +563,6 @@ const ListKerusakanPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="flex w-full flex-col items-start justify-center gap-3 p-3 sm:p-6">
-        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          {(() => {
-            const hasAnyRedundanN0 = unitCountsBaseData.some((item) => item.redundan === "n+0");
-            const active = selectedUnit === "";
-
-            let glowClass = "bg-emerald-50 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)]";
-            if (hasAnyRedundanN0) {
-              glowClass = "bg-red-50 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
-            }
-
-            return (
-              <button
-                type="button"
-                onClick={() => setSelectedUnit("")}
-                aria-pressed={active}
-                className={`relative overflow-hidden flex flex-col items-center justify-center gap-1 rounded-3xl border p-3 transition-all sm:p-4 ${
-                  active ? "scale-105 z-10" : "hover:-translate-y-0.5"
-                } ${glowClass}`}
-              >
-                <p className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-all ${
-                  active ? "bg-sky-500 text-white shadow-sm" : "bg-transparent text-slate-500"
-                }`}>
-                  All Units
-                </p>
-                <p className="text-2xl font-bold leading-none text-sky-900 sm:text-3xl">
-                  {unitCountsBaseData.length}
-                </p>
-
-                {(() => {
-                  const n0ItemsAll = unitCountsBaseData.filter((item) => item.redundan === "n+0");
-                  if (n0ItemsAll.length === 0) return null;
-                  return (
-                    <div className="mt-2 flex w-full max-h-16 flex-col items-start gap-1.5 overflow-y-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                      {n0ItemsAll.map((item, index) => (
-                        <div key={item.id} className="flex w-full items-center justify-between gap-1 text-[10px] font-bold text-sky-950">
-                          <span className="truncate">
-                            {index + 1}. {item.tag_name || "-"}
-                          </span>
-                          <span className="shrink-0 rounded bg-red-500 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white shadow-sm">
-                            n+0
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                <div className={`absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 ${active ? "bg-sky-500" : "bg-transparent"}`} />
-              </button>
-            );
-          })()}
-
-          {unitFilterOptions.map((unit) => {
-            const unitItems = unitCountsBaseData.filter((item) => item.unit === unit);
-            const count = unitItems.length;
-            const hasRedundanN0 = unitItems.some((item) => item.redundan === "n+0");
-            const color = getUnitColorPalette(unit);
-            const active = selectedUnit === unit;
-
-            let glowClass = "bg-emerald-50 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)]";
-            if (hasRedundanN0) {
-              glowClass = "bg-red-50 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
-            }
-
-            return (
-              <button
-                key={unit}
-                type="button"
-                onClick={() => setSelectedUnit(active ? "" : unit)}
-                aria-pressed={active}
-                className={`relative overflow-hidden flex flex-col items-center justify-center gap-1 rounded-3xl border p-3 transition-all sm:p-4 ${
-                  active ? "scale-105 z-10" : "hover:-translate-y-0.5"
-                } ${glowClass}`}
-              >
-                <p className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-all ${
-                  active ? `${color.background} text-white shadow-sm` : "bg-transparent text-slate-500"
-                }`}>
-                  Unit {unit}
-                </p>
-                <p className="text-2xl font-bold leading-none text-sky-900 sm:text-3xl">
-                  {count}
-                </p>
-
-                {(() => {
-                  const n0Items = unitItems.filter((item) => item.redundan === "n+0");
-                  if (n0Items.length === 0) return null;
-                  return (
-                    <div className="mt-2 flex w-full max-h-16 flex-col items-start gap-1.5 overflow-y-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                      {n0Items.map((item, index) => (
-                        <div key={item.id} className="flex w-full items-center justify-between gap-1 text-[10px] font-bold text-sky-950">
-                          <span className="truncate">
-                            {index + 1}. {item.tag_name || "-"}
-                          </span>
-                          <span className="shrink-0 rounded bg-red-500 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white shadow-sm">
-                            n+0
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                <div className={`absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 ${active ? color.background : "bg-transparent"}`} />
-              </button>
-            );
-          })}
-        </div>
-
         <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <button
             onClick={() => setOpenModal(true)}
@@ -700,6 +602,63 @@ const ListKerusakanPage: React.FC = () => {
 
         <div className="flex w-full flex-col gap-2 rounded-2xl border border-sky-100 bg-white/70 p-3 shadow-sm">
 
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Unit
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedUnit("")}
+              aria-pressed={selectedUnit === ""}
+              className={getFilterButtonClass(
+                selectedUnit === "",
+                "bg-sky-700",
+              )}
+            >
+              All
+              <span
+                className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
+                  selectedUnit === ""
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-200 text-slate-500"
+                }`}
+              >
+                {unitCountsBaseData.length}
+              </span>
+            </button>
+
+            {unitFilterOptions.map((unit) => {
+              const count = unitCountsBaseData.filter((item) => item.unit === unit).length;
+              const active = selectedUnit === unit;
+
+              return (
+                <button
+                  key={unit}
+                  type="button"
+                  onClick={() =>
+                    setSelectedUnit(active ? "" : unit)
+                  }
+                  aria-pressed={active}
+                  className={`${filterButtonBaseClass} ${
+                    active
+                      ? `bg-sky-500 text-white border-sky-600 shadow-lg`
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Unit {unit}
+                  <span
+                    className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
