@@ -186,12 +186,8 @@ const SampleGroups: React.FC<{
   }
 
   return (
-    <div className="p-2 text-slate-700 w-full h-full">
-      <h1 className="mb-3 text-center text-xl font-semibold text-sky-950">
-        Shift <span className="text-sky-600">{data.shift}</span>
-      </h1>
-
-      <div className="flex flex-row w-full gap-4">
+    <div className="text-slate-700 w-full h-full">
+      <div className="flex flex-row w-full gap-3">
         {(() => {
           let renderedGroups = 0;
           const elements = Object.entries(grouped).map(([prefix, groupSamples], idx) => {
@@ -250,9 +246,9 @@ const SampleGroups: React.FC<{
               return (
                 <div
                   key={prefix}
-                  className={`rounded-3xl border bg-white p-4 shadow-md flex-1 min-w-0 ${groupColors[idx % groupColors.length]}`}
+                  className={`rounded-2xl border bg-white p-2 shadow-md flex-1 min-w-0 ${groupColors[idx % groupColors.length]}`}
                 >
-                  <h2 className="mb-3 text-center text-lg font-bold text-sky-950">
+                  <h2 className="mb-2 text-center text-sm font-bold text-sky-950">
                   Unit {prefix}
                   {prefix === "023" ? ` ${feed023 || ""}` : prefix === "024" ? ` ${feed024 || ""}` : ""}
                 </h2>
@@ -263,10 +259,10 @@ const SampleGroups: React.FC<{
                     <table className="w-full text-left text-xs">
                       <thead className="bg-sky-100/70 text-sky-900 border-b border-sky-200">
                         <tr>
-                          <th className="px-3 py-2 font-bold">Sample</th>
-                          <th className="px-3 py-2 font-bold">Parameter</th>
-                          <th className="px-3 py-2 font-bold">Value</th>
-                          <th className="px-3 py-2 font-bold">Spec Limit</th>
+                          <th className="px-2 py-1 font-bold">Sample</th>
+                          <th className="px-2 py-1 font-bold">Parameter</th>
+                          <th className="px-2 py-1 font-bold">Value</th>
+                          <th className="px-2 py-1 font-bold">Spec Limit</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-sky-50">
@@ -274,17 +270,17 @@ const SampleGroups: React.FC<{
                           processedProps.map(({ propName, prop, limitValue, valueClass }: any, propIdx: number) => (
                             <tr key={`${sampleIdOriginal as string}-${propName}`} className={`hover:bg-white transition-colors ${propIdx === 0 ? 'border-t border-sky-200/60 bg-sky-50/40' : 'bg-sky-50/10'}`}>
                               {propIdx === 0 && (
-                                <td rowSpan={processedProps.length} className="px-3 py-1.5 align-top border-r border-sky-100/50 bg-sky-50/60">
+                              <td rowSpan={processedProps.length} className="px-2 py-1 align-top border-r border-sky-100/50 bg-sky-50/60">
                                   <div className="font-bold text-sky-900 leading-tight">{sampleName as string}</div>
-                                  <div className="text-[10px] text-slate-500 mt-0.5">{sampleIdOriginal as string}</div>
+                                  <div className="text-[10px] text-slate-500">{sampleIdOriginal as string}</div>
                                 </td>
                               )}
-                              <td className="px-3 py-1.5 font-semibold text-slate-700">{propName}</td>
-                              <td className={`px-3 py-1.5 font-bold ${valueClass}`}>
+                              <td className="px-2 py-1 font-semibold text-slate-700">{propName}</td>
+                              <td className={`px-2 py-1 font-bold ${valueClass}`}>
                                 {prop.value}
                                 {prop.unit && <span className="ml-1 text-[10px] text-slate-400">{prop.unit}</span>}
                               </td>
-                              <td className="px-3 py-1.5 text-[11px] text-slate-500">
+                              <td className="px-2 py-1 text-[11px] text-slate-500">
                                 {!limitValue?.low_limit && !limitValue?.high_limit ? (
                                   "N/A"
                                 ) : limitValue?.low_limit && limitValue?.high_limit ? (

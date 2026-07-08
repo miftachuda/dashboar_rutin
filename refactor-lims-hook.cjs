@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+﻿const fs = require('fs');
+
+const hookContent = `import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import { SampleLimit } from "@/types/SampleLimit";
 
@@ -46,9 +48,9 @@ export function useLimsData() {
     let isCancelled = false;
 
     const fetchShiftData = async (targetShift: string) => {
-      const url = `https://lims.loc-2.com/${targetShift.toLowerCase()}`;
+      const url = \`https://lims.loc-2.com/\${targetShift.toLowerCase()}\`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+      if (!res.ok) throw new Error(\`HTTP error: \${res.status}\`);
       const json = await res.json();
       
       // Explicitly check for an empty samples list even if response is 200 OK
@@ -111,3 +113,6 @@ export function useLimsData() {
 
   return { shift, setShift, data, limit, loading: loadingLimit || loadingData, error };
 }
+`;
+
+fs.writeFileSync('src/hooks/useLimsData.ts', hookContent);

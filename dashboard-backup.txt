@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/MainLayout";
 import { ListData } from "@/types/listdata";
 import { pb } from "@/lib/pocketbase";
@@ -12,6 +12,7 @@ import {
   ConnectionStatus,
 } from "@/hooks/useLiveTanks";
 import { useLiveChemicals } from "@/hooks/useLiveChemicals";
+import { useLowStockConsumables } from "@/hooks/useLowStockConsumables";
 import { useLimsData } from "@/hooks/useLimsData";
 import SampleGroups from "@/components/LimsCard";
 import {
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Droplets,
+  Package,
   Wrench,
   FlaskConical,
 } from "lucide-react";
@@ -41,6 +43,8 @@ export default function UnitDashboardPage() {
   // Hooks
   const { status, rowsByTank, tankDataByKey } = useLiveTanks();
   const { chemicals, loading: chemicalsLoading } = useLiveChemicals();
+  const { lowStockItems, loading: consumablesLoading } =
+    useLowStockConsumables();
   const {
     data: limsData,
     limit: limsLimit,
@@ -104,10 +108,10 @@ export default function UnitDashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex w-full flex-col h-[calc(100vh-20px)] overflow-hidden gap-3 p-2 sm:p-4">
+      <div className="flex w-full flex-col items-start justify-start gap-8 p-3 sm:p-6 pb-20">
         {/* SECTION 1: KERUSAKAN */}
-        <section id="kerusakan" className="w-full shrink-0">
-          <div className="flex items-center gap-2 mb-2">
+        <section id="kerusakan" className="w-full">
+          <div className="flex items-center gap-2 mb-4">
             <div className="p-2 bg-sky-100 text-sky-600 rounded-lg">
               <Wrench size={20} />
             </div>
@@ -121,17 +125,17 @@ export default function UnitDashboardPage() {
               <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="flex flex-row overflow-x-auto w-full gap-2 pt-2 pb-4 px-1 -mx-1 custom-scrollbar snap-x">
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* ALL UNITS CARD */}
               {(() => {
                 const hasAnyRedundanN0 = listdata.some(
                   (item) => item.redundan === "n+0",
                 );
                 let glowClass =
-                  "bg-emerald-50/50 border-2 border-emerald-500 text-slate-800 shadow-none hover:shadow-md";
+                  "bg-emerald-50/50 border-emerald-200 shadow-sm hover:shadow-md";
                 if (hasAnyRedundanN0) {
                   glowClass =
-                    "bg-red-50 border-2 border-red-500 text-slate-800 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
+                    "bg-red-50 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
                 }
 
                 const doneCount = listdata.filter(
@@ -151,18 +155,16 @@ export default function UnitDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleUnitClick("")}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[130px] shrink-0 min-w-[260px] flex-[1.5] snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl border p-5 transition-all hover:-translate-y-1 ${glowClass} min-h-[180px]`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
                       <p className="rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
-                        All
+                        All Units
                       </p>
                       <div className="flex items-baseline gap-1.5 text-5xl font-bold leading-none">
                         <span className="text-slate-500">{doneCount}</span>
                         <span className="text-3xl text-slate-300">/</span>
-                        <span className="text-slate-500">
-                          {listdata.length}
-                        </span>
+                        <span className="text-sky-500">{listdata.length}</span>
                       </div>
                     </div>
 
@@ -200,17 +202,17 @@ export default function UnitDashboardPage() {
                         <div className="flex w-full flex-col gap-1.5 border-t border-slate-200/60 pt-3 text-left">
                           <div className="flex flex-wrap gap-1.5">
                             {onStreamCount > 0 && (
-                              <span className="rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm">
                                 On Stream: {onStreamCount}
                               </span>
                             )}
                             {pitStopCount > 0 && (
-                              <span className="rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 shadow-sm">
                                 Pit Stop: {pitStopCount}
                               </span>
                             )}
                             {turnAroundCount > 0 && (
-                              <span className="rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 shadow-sm">
                                 TA: {turnAroundCount}
                               </span>
                             )}
@@ -234,10 +236,10 @@ export default function UnitDashboardPage() {
                 const color = getUnitColorPalette(unit);
 
                 let glowClass =
-                  "bg-emerald-50/50 border-2 border-emerald-500 text-slate-800 shadow-none hover:shadow-md";
+                  "bg-emerald-50/50 border-emerald-200 shadow-sm hover:shadow-md";
                 if (hasRedundanN0) {
                   glowClass =
-                    "bg-red-50 border-2 border-red-500 text-slate-800 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
+                    "bg-red-50 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
                 }
 
                 const doneCount = unitItems.filter(
@@ -258,16 +260,20 @@ export default function UnitDashboardPage() {
                     key={unit}
                     type="button"
                     onClick={() => handleUnitClick(unit)}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-3 transition-all hover:-translate-y-1 ${glowClass} min-h-[130px] shrink-0 min-w-[150px] flex-1 snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl border p-5 transition-all hover:-translate-y-1 ${glowClass} min-h-[180px]`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
-                      <p className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
-                        {unit}
+                      <p className="rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
+                        Unit {unit}
                       </p>
-                      <div className="flex items-baseline gap-1 text-3xl font-bold leading-none">
+                      <div className="flex items-baseline gap-1.5 text-5xl font-bold leading-none">
                         <span className="text-slate-500">{doneCount}</span>
-                        <span className="text-xl text-slate-300">/</span>
-                        <span className="text-slate-500">{count}</span>
+                        <span className="text-3xl text-slate-300">/</span>
+                        <span
+                          className={`${color.background} bg-clip-text text-transparent`}
+                        >
+                          {count}
+                        </span>
                       </div>
                     </div>
 
@@ -305,17 +311,17 @@ export default function UnitDashboardPage() {
                         <div className="flex w-full flex-col gap-1.5 border-t border-slate-200/60 pt-3 text-left">
                           <div className="flex flex-wrap gap-1.5">
                             {onStreamCount > 0 && (
-                              <span className="rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm">
                                 On Stream: {onStreamCount}
                               </span>
                             )}
                             {pitStopCount > 0 && (
-                              <span className="rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 shadow-sm">
                                 Pit Stop: {pitStopCount}
                               </span>
                             )}
                             {turnAroundCount > 0 && (
-                              <span className="rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 shadow-sm">
                                 TA: {turnAroundCount}
                               </span>
                             )}
@@ -334,153 +340,181 @@ export default function UnitDashboardPage() {
           )}
         </section>
 
-        <div className="flex flex-col w-full gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col xl:flex-row w-full gap-4">
-            {/* SECTION 2: CHEMICAL STOCK */}
-            <section id="chemical" className="w-full xl:w-1/2 flex flex-col">
-              <div className="flex items-center gap-2 mb-2 shrink-0">
-                <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+        <div className="flex flex-col xl:flex-row w-full gap-6">
+          {/* SECTION 2: CHEMICAL STOCK */}
+          <section id="chemical" className="w-full xl:w-1/2 flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                <Droplets size={20} />
+              </div>
+              <h2 className="text-xl font-bold text-sky-950">Chemical Stock</h2>
+            </div>
+
+            {(() => {
+              const lowChemicals = chemicals.filter(
+                (chem) => chem.level !== null && chem.level < 30,
+              );
+
+              if (chemicalsLoading) {
+                return (
+                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
+                    <div className="w-4 h-4 border-2 border-purple-200 border-t-purple-500 rounded-full animate-spin" />
+                    Checking chemical levels...
+                  </div>
+                );
+              }
+
+              if (lowChemicals.length === 0) {
+                return (
+                  <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 flex flex-col items-center justify-center text-center gap-2 h-full">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                    <p className="font-bold text-emerald-800">
+                      Chemicals Healthy
+                    </p>
+                    <p className="text-xs text-emerald-600">
+                      All monitored chemical vessels are above 30%.
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid w-full grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
+                  {lowChemicals.map((chem) => {
+                    const unitColor = getUnitColorPalette(chem.unit);
+                    return (
+                      <div
+                        key={chem.tagName}
+                        className="rounded-3xl border p-4 shadow-sm flex flex-col gap-2 bg-orange-50 border-orange-200 relative overflow-hidden group hover:border-orange-300 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-base font-extrabold text-orange-950">
+                              {chem.label}
+                            </h3>
+                            <p className="text-xs font-semibold text-orange-700/80">
+                              {chem.subtitle}
+                            </p>
+                          </div>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${unitColor.background} text-white shadow-sm`}
+                          >
+                            Unit {chem.unit}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-end justify-between">
+                          <span className="text-3xl font-bold text-orange-600">
+                            {Math.round(chem.level!)}
+                            <span className="text-sm ml-1">%</span>
+                          </span>
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-200/50 px-2 py-1 rounded-md">
+                            <AlertTriangle size={12} />
+                            Low Stock
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </section>
+
+          {/* SECTION 3: LEVEL TANKI */}
+          <section id="tanki" className="w-full xl:w-1/2 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
                   <Droplets size={20} />
                 </div>
                 <h2 className="text-xl font-bold text-sky-950">
-                  Live Chemical Stock
+                  Critical Tank
                 </h2>
               </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${statusConfig[status]}`}
+                >
+                  <Radio className="h-3 w-3" /> {status}
+                </span>
 
-              {(() => {
-                const lowChemicals = chemicals.filter(
-                  (chem) => chem.level !== null && chem.level < 30,
-                );
-
-                if (chemicalsLoading) {
-                  return (
-                    <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
-                      <div className="w-4 h-4 border-2 border-purple-200 border-t-purple-500 rounded-full animate-spin" />
-                      Checking chemical levels...
-                    </div>
-                  );
-                }
-
-                if (lowChemicals.length === 0) {
-                  return (
-                    <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 border-2 border-emerald-500 px-3 py-2 rounded-xl shadow-sm">
-                      <span className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-                        <span>Chemicals Healthy</span>
-                      </span>
-                      <span className="text-[10px] font-semibold text-emerald-600">All vessels above 30%</span>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="flex w-full flex-col gap-1.5 overflow-y-auto min-h-0 pr-1 pb-1 custom-scrollbar">
-                    {lowChemicals.map((chem) => {
-                      const unitColor = getUnitColorPalette(chem.unit);
-                      return (
-                        <div
-                          key={chem.tagName}
-                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-orange-950 bg-orange-50 border-2 border-orange-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
-                        >
-                          <span className="truncate text-left flex items-center gap-2">
-                            <AlertTriangle
-                              size={14}
-                              className="shrink-0 text-orange-600"
-                            />
-                            <span>{chem.label}</span>
-                            <span className="text-[10px] font-semibold text-orange-700/80 hidden sm:inline">
-                              ({chem.subtitle})
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-sm font-extrabold tracking-wide text-orange-600">
-                              {Math.round(chem.level!)}%
-                            </span>
-                            <span
-                              className={`rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm ${unitColor.background} text-white`}
-                            >
-                              {chem.unit}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </section>
-
-            {/* SECTION 3: LEVEL TANKI */}
-            <section id="tanki" className="w-full xl:w-1/2 flex flex-col">
-              <div className="flex items-center justify-between mb-2 shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                    <Droplets size={20} />
-                  </div>
-                  <h2 className="text-xl font-bold text-sky-950">
-                    Critical Tank
-                  </h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${statusConfig[status]}`}
-                  >
-                    <Radio className="h-3 w-3" /> {status}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-700">
-                    Live: {liveTankCount} /{" "}
-                    {Object.keys(rowsByTank).length ||
-                      predefinedTankList.length}
-                  </span>
-                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-700">
+                  Live: {liveTankCount} /{" "}
+                  {Object.keys(rowsByTank).length || predefinedTankList.length}
+                </span>
               </div>
+            </div>
 
-              {globalCriticalTanks.length === 0 ? (
-                <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 border-2 border-emerald-500 px-3 py-2 rounded-xl shadow-sm">
-                  <span className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-                    <span>All Tanks Stable</span>
-                  </span>
-                  <span className="text-[10px] font-semibold text-emerald-600">No tanks critical within 12h</span>
-                </div>
-              ) : (
-                <div className="flex w-full flex-col gap-1.5 overflow-y-auto min-h-0 pr-1 pb-1 custom-scrollbar">
-                  {globalCriticalTanks.map((ct) => (
-                    <div
-                      key={ct.tank}
-                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-orange-950 bg-orange-50 border-2 border-orange-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
-                    >
-                      <span className="truncate text-left flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-pulse shrink-0"></span>
-                        <span>{ct.tank}</span>
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-orange-800 whitespace-nowrap">
-                          {ct.text}{" "}
-                          {ct.level !== null && ct.target !== null
-                            ? `(${new Intl.NumberFormat("id-ID").format(Math.round(ct.level))} -> ${new Intl.NumberFormat("id-ID").format(Math.round(ct.target))} mm)`
-                            : ""}
-                        </span>
-                        <span className="rounded bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm flex items-center gap-1 border border-orange-200">
-                          <AlertTriangle size={10} />
-                          Critical
+            {globalCriticalTanks.length === 0 ? (
+              <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 flex flex-col items-center justify-center text-center gap-2">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                <p className="font-bold text-emerald-800">All Tanks Stable</p>
+                <p className="text-xs text-emerald-600">
+                  No tanks are projected to hit High/Low targets within the next
+                  12 hours.
+                </p>
+              </div>
+            ) : (
+              <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
+                {globalCriticalTanks.map((ct) => (
+                  <div
+                    key={ct.tank}
+                    className="flex flex-col gap-2 p-4 rounded-2xl bg-orange-50 border border-orange-200 shadow-sm relative overflow-hidden group hover:border-orange-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
+                        <span className="font-bold text-orange-900">
+                          {ct.tank}
                         </span>
                       </div>
+                      <span className="text-[11px] font-bold text-orange-700 bg-orange-200/50 px-2 py-0.5 rounded-md">
+                        {ct.text}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
+
+                    {ct.level !== null && ct.target !== null && (
+                      <div className="flex items-center justify-between text-xs font-semibold text-orange-800 mt-1">
+                        <span>
+                          Level:{" "}
+                          {new Intl.NumberFormat("id-ID").format(
+                            Math.round(ct.level),
+                          )}{" "}
+                          mm
+                        </span>
+                        <ChevronRight
+                          size={14}
+                          className="text-orange-400 mx-1"
+                        />
+                        <span>
+                          Target:{" "}
+                          {new Intl.NumberFormat("id-ID").format(
+                            Math.round(ct.target),
+                          )}{" "}
+                          mm
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-200/50 px-2 py-1 rounded-md w-fit">
+                      <AlertTriangle size={12} />
+                      Critical Tank
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
 
           {/* SECTION 4: LIMS */}
-          <section id="lims" className="w-full">
-            <div className="flex items-center gap-2 mb-2">
+          <section id="lims" className="w-full flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-pink-100 text-pink-600 rounded-lg">
                 <FlaskConical size={20} />
               </div>
               <h2 className="text-xl font-bold text-sky-950">
-                LIMS Spec Alerts
+                LIMS Out of Spec Alerts
               </h2>
             </div>
 
@@ -498,7 +532,59 @@ export default function UnitDashboardPage() {
               />
             )}
           </section>
-        </div>
+
+        {/* SECTION 5: CONSUMABLE MATERIAL */}
+        <section id="material" className="w-full">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
+              <Package size={20} />
+            </div>
+            <h2 className="text-xl font-bold text-sky-950">
+              Consumable Material Alerts
+            </h2>
+          </div>
+
+          {consumablesLoading ? (
+            <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
+              <div className="w-4 h-4 border-2 border-amber-200 border-t-amber-500 rounded-full animate-spin" />
+              Checking stock levels...
+            </div>
+          ) : lowStockItems.length === 0 ? (
+            <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 flex flex-col items-center justify-center text-center gap-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+              <p className="font-bold text-emerald-800">All Stocks Healthy</p>
+              <p className="text-xs text-emerald-600">
+                No consumable materials are below their minimum threshold.
+              </p>
+            </div>
+          ) : (
+            <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {lowStockItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white border border-red-100 shadow-sm"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-sky-950">
+                      {item.material_name}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500">
+                      {item.section}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end text-right">
+                    <span className="text-sm font-bold text-red-600">
+                      {item.stock} {item.unit}
+                    </span>
+                    <span className="text-[10px] font-bold text-red-400">
+                      Min: {item.minimum_stock}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </DashboardLayout>
   );
