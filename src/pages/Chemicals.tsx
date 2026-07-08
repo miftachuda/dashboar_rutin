@@ -1213,7 +1213,7 @@ const ChemicalPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-yellow-100 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+                    <div className="rounded-2xl border border-yellow-500 bg-yellow-400 px-4 py-3 text-sm text-yellow-950">
                       <p className="font-semibold">
                         Delta Level:{" "}
                         {Number.isFinite(formPropaneDeltaLevel)

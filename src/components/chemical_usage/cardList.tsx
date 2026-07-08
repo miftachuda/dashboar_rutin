@@ -59,12 +59,12 @@ const CardList = ({
                     {item.chemical_name}
                   </p>
                   {item.chemical_name === "Propane" && item.propane_tank && (
-                    <span className="mt-2 inline-flex rounded-full bg-yellow-50 px-3 py-1 text-xs font-bold text-yellow-600">
+                    <span className="mt-2 inline-flex rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-yellow-950">
                       Vessel: {item.propane_tank}
                     </span>
                   )}
                   {isPropanePercent && (
-                    <p className="mt-2 text-xs font-semibold text-yellow-600">
+                    <p className="mt-2 text-xs font-bold text-yellow-600">
                       Level: {item.propane_start_level ?? "-"}% - {item.propane_end_level ?? "-"}%
                       {Number.isFinite(propaneVolumeM3)
                         ? ` (${Number(item.amount).toFixed(2)}%, ${propaneVolumeM3.toFixed(2)} m³)`

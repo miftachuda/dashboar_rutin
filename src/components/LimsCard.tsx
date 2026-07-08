@@ -10,6 +10,32 @@ const groupColors = [
   "border-cyan-200 shadow-cyan-100/80",
 ];
 
+// Configuration for highlighting specific LIMS parameters per unit.
+// Use lowercase for matching. It will match if the parameter name CONTAINS the string.
+export const LIMS_HIGHLIGHT_CONFIG: Record<string, { include?: string[], exclude?: string[] }> = {
+  "021": { include: ["visco"] }, // Matches any param containing "visco"
+  "022": { include: ["visco"] },
+  "023": { include: ["ri", "visco"] },
+  "024": { exclude: ["sg", "ri"] }       // Highlights everything EXCEPT "sg" and "ri"
+};
+
+// Helper function to check if a property should be highlighted
+const isHighlighted = (unitPrefix: string, propName: string): boolean => {
+  const config = LIMS_HIGHLIGHT_CONFIG[unitPrefix];
+  if (!config) return false;
+  
+  const lowerProp = propName.toLowerCase();
+  
+  if (config.include) {
+    return config.include.some(p => lowerProp.includes(p));
+  }
+  if (config.exclude) {
+    return !config.exclude.some(p => lowerProp.includes(p));
+  }
+  
+  return false;
+};
+
 type TagData = {
   TagName: string;
   Value: number[];
@@ -147,7 +173,8 @@ const SampleGroups: React.FC<{
   limit: SampleLimit[];
   onlyOOS?: boolean;
   format?: "card" | "table";
-}> = ({ data, loading = false, limit, onlyOOS = false, format = "card" }) => {
+  enableHighlight?: boolean;
+}> = ({ data, loading = false, limit, onlyOOS = false, format = "card", enableHighlight = false }) => {
   // ✅ ALL HOOKS MUST ALWAYS RUN
   const [mode023, setMode023] = useState<TagData[] | null>(null);
   const [mode024, setMode024] = useState<TagData[] | null>(null);
@@ -230,8 +257,10 @@ const SampleGroups: React.FC<{
                 const isOOS = valueClass === "text-red-600";
                 if (isOOS) hasOOS = true;
 
+                const highlighted = enableHighlight ? isHighlighted(prefix, propName) : false;
+
                 if (!onlyOOS || isOOS) {
-                  processedProps.push({ propName, prop, limitValue, valueClass });
+                  processedProps.push({ propName, prop, limitValue, valueClass, highlighted });
                 }
               }
 
@@ -267,7 +296,7 @@ const SampleGroups: React.FC<{
                       </thead>
                       <tbody className="divide-y divide-sky-50">
                         {validSamples.map(({ sampleIdOriginal, sampleName, processedProps }) => (
-                          processedProps.map(({ propName, prop, limitValue, valueClass }: any, propIdx: number) => (
+                          processedProps.map(({ propName, prop, limitValue, valueClass, highlighted }: any, propIdx: number) => (
                             <tr key={`${sampleIdOriginal as string}-${propName}`} className={`hover:bg-white transition-colors ${propIdx === 0 ? 'border-t border-sky-200/60 bg-sky-50/40' : 'bg-sky-50/10'}`}>
                               {propIdx === 0 && (
                               <td rowSpan={processedProps.length} className="px-2 py-1 align-top border-r border-sky-100/50 bg-sky-50/60">
@@ -276,9 +305,11 @@ const SampleGroups: React.FC<{
                                 </td>
                               )}
                               <td className="px-2 py-1 font-semibold text-slate-700">{propName}</td>
-                              <td className={`px-2 py-1 font-bold ${valueClass}`}>
-                                {prop.value}
-                                {prop.unit && <span className="ml-1 text-[10px] text-slate-400">{prop.unit}</span>}
+                              <td className="px-2 py-1 align-middle">
+                                <span className={`inline-flex items-baseline font-bold ${valueClass} ${highlighted ? "bg-amber-100 ring-1 ring-amber-300 px-1.5 rounded" : ""}`}>
+                                  {prop.value}
+                                  {prop.unit && <span className="ml-1 text-[10px] text-slate-400">{prop.unit}</span>}
+                                </span>
                               </td>
                               <td className="px-2 py-1 text-[11px] text-slate-500">
                                 {!limitValue?.low_limit && !limitValue?.high_limit ? (
@@ -312,8 +343,8 @@ const SampleGroups: React.FC<{
 
                         <div className="p-4 pt-1">
                           <div className="grid grid-cols-2 gap-1">
-                            {processedProps.map(({ propName, prop, limitValue, valueClass }: any) => (
-                              <div key={propName} className="rounded-xl border border-white bg-white p-2 shadow-sm">
+                            {processedProps.map(({ propName, prop, limitValue, valueClass, highlighted }: any) => (
+                              <div key={propName} className={`rounded-xl border p-2 shadow-sm ${highlighted ? "bg-amber-50 border-amber-300" : "bg-white border-white"}`}>
                                 <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                                   {propName}
                                 </div>

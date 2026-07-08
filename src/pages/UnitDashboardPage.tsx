@@ -379,30 +379,27 @@ export default function UnitDashboardPage() {
                 return (
                   <div className="flex w-full flex-col gap-1.5 overflow-y-auto min-h-0 pr-1 pb-1 custom-scrollbar">
                     {lowChemicals.map((chem) => {
-                      const unitColor = getUnitColorPalette(chem.unit);
                       return (
                         <div
                           key={chem.tagName}
-                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-50 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
+                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
                         >
                           <span className="truncate text-left flex items-center gap-2">
+                            <span className="rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-900 shadow-sm shrink-0">
+                              {chem.unit}
+                            </span>
                             <AlertTriangle
                               size={14}
-                              className="shrink-0 text-yellow-600"
+                              className="shrink-0 text-yellow-900"
                             />
                             <span>{chem.label}</span>
-                            <span className="text-[10px] font-semibold text-yellow-700/80 hidden sm:inline">
+                            <span className="text-[10px] font-semibold text-yellow-900/80 hidden sm:inline">
                               ({chem.subtitle})
                             </span>
                           </span>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-sm font-extrabold tracking-wide text-yellow-600">
+                            <span className="text-sm font-extrabold tracking-wide text-yellow-900">
                               {Math.round(chem.level!)}%
-                            </span>
-                            <span
-                              className={`rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm ${unitColor.background} text-white`}
-                            >
-                              {chem.unit}
                             </span>
                           </div>
                         </div>
@@ -456,20 +453,20 @@ export default function UnitDashboardPage() {
                   {globalCriticalTanks.map((ct) => (
                     <div
                       key={ct.tank}
-                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-50 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
+                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
                     >
                       <span className="truncate text-left flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-yellow-500 animate-pulse shrink-0"></span>
+                        <span className="h-2.5 w-2.5 rounded-full bg-yellow-100 animate-pulse shrink-0"></span>
                         <span>{ct.tank}</span>
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-yellow-800 whitespace-nowrap">
+                        <span className="text-[10px] text-yellow-900 whitespace-nowrap">
                           {ct.text}{" "}
                           {ct.level !== null && ct.target !== null
                             ? `(${new Intl.NumberFormat("id-ID").format(Math.round(ct.level))} -> ${new Intl.NumberFormat("id-ID").format(Math.round(ct.target))} mm)`
                             : ""}
                         </span>
-                        <span className="rounded bg-yellow-100 text-yellow-700 px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm flex items-center gap-1 border border-yellow-200">
+                        <span className="rounded bg-yellow-500 text-yellow-950 px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm flex items-center gap-1 border border-yellow-600">
                           <AlertTriangle size={10} />
                           Critical
                         </span>
@@ -503,6 +500,7 @@ export default function UnitDashboardPage() {
                 limit={limsLimit}
                 onlyOOS={true}
                 format="table"
+                enableHighlight={true}
               />
             )}
           </section>
