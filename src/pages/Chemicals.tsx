@@ -130,7 +130,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
     subtitle: "Furfural",
     chemical: "FUR",
     visual: "vertical",
-    gradient: "from-amber-400 to-orange-500",
+    gradient: "from-amber-400 to-yellow-500",
     tonPerPercent: 2.11,
   },
   {
@@ -157,7 +157,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
     subtitle: "022V-103",
     chemical: "PROP",
     visual: "horizontal",
-    gradient: "from-red-400 to-orange-500",
+    gradient: "from-red-400 to-yellow-500",
     tank: "022V-103",
   },
   {
@@ -166,7 +166,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
     subtitle: "024V-112",
     chemical: "PROP",
     visual: "horizontal",
-    gradient: "from-red-400 to-orange-500",
+    gradient: "from-red-400 to-yellow-500",
     tank: "024V-112",
   },
 ];
@@ -1213,7 +1213,7 @@ const ChemicalPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                    <div className="rounded-2xl border border-yellow-100 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
                       <p className="font-semibold">
                         Delta Level:{" "}
                         {Number.isFinite(formPropaneDeltaLevel)

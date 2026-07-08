@@ -128,10 +128,10 @@ export default function UnitDashboardPage() {
                   (item) => item.redundan === "n+0",
                 );
                 let glowClass =
-                  "bg-emerald-50/50 border-2 border-emerald-500 text-slate-800 shadow-none hover:shadow-md";
+                  "bg-emerald-500 border-2 border-emerald-600 text-white shadow-none hover:shadow-md";
                 if (hasAnyRedundanN0) {
                   glowClass =
-                    "bg-red-50 border-2 border-red-500 text-slate-800 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
+                    "bg-red-500 border-2 border-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
                 }
 
                 const doneCount = listdata.filter(
@@ -158,11 +158,9 @@ export default function UnitDashboardPage() {
                         All
                       </p>
                       <div className="flex items-baseline gap-1.5 text-5xl font-bold leading-none">
-                        <span className="text-slate-500">{doneCount}</span>
-                        <span className="text-3xl text-slate-300">/</span>
-                        <span className="text-slate-500">
-                          {listdata.length}
-                        </span>
+                        <span className="text-white">{doneCount}</span>
+                        <span className="text-3xl text-white/70">/</span>
+                        <span className="text-white">{listdata.length}</span>
                       </div>
                     </div>
 
@@ -234,10 +232,10 @@ export default function UnitDashboardPage() {
                 const color = getUnitColorPalette(unit);
 
                 let glowClass =
-                  "bg-emerald-50/50 border-2 border-emerald-500 text-slate-800 shadow-none hover:shadow-md";
+                  "bg-emerald-500 border-2 border-emerald-600 text-white shadow-none hover:shadow-md";
                 if (hasRedundanN0) {
                   glowClass =
-                    "bg-red-50 border-2 border-red-500 text-slate-800 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
+                    "bg-red-500 border-2 border-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
                 }
 
                 const doneCount = unitItems.filter(
@@ -265,9 +263,9 @@ export default function UnitDashboardPage() {
                         {unit}
                       </p>
                       <div className="flex items-baseline gap-1 text-3xl font-bold leading-none">
-                        <span className="text-slate-500">{doneCount}</span>
-                        <span className="text-xl text-slate-300">/</span>
-                        <span className="text-slate-500">{count}</span>
+                        <span className="text-white">{doneCount}</span>
+                        <span className="text-xl text-white/70">/</span>
+                        <span className="text-white">{count}</span>
                       </div>
                     </div>
 
@@ -365,10 +363,15 @@ export default function UnitDashboardPage() {
                   return (
                     <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 border-2 border-emerald-500 px-3 py-2 rounded-xl shadow-sm">
                       <span className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                        <CheckCircle2
+                          size={14}
+                          className="shrink-0 text-emerald-600"
+                        />
                         <span>Chemicals Healthy</span>
                       </span>
-                      <span className="text-[10px] font-semibold text-emerald-600">All vessels above 30%</span>
+                      <span className="text-[10px] font-semibold text-emerald-600">
+                        All vessels above 30%
+                      </span>
                     </div>
                   );
                 }
@@ -380,20 +383,20 @@ export default function UnitDashboardPage() {
                       return (
                         <div
                           key={chem.tagName}
-                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-orange-950 bg-orange-50 border-2 border-orange-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
+                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-50 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
                         >
                           <span className="truncate text-left flex items-center gap-2">
                             <AlertTriangle
                               size={14}
-                              className="shrink-0 text-orange-600"
+                              className="shrink-0 text-yellow-600"
                             />
                             <span>{chem.label}</span>
-                            <span className="text-[10px] font-semibold text-orange-700/80 hidden sm:inline">
+                            <span className="text-[10px] font-semibold text-yellow-700/80 hidden sm:inline">
                               ({chem.subtitle})
                             </span>
                           </span>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-sm font-extrabold tracking-wide text-orange-600">
+                            <span className="text-sm font-extrabold tracking-wide text-yellow-600">
                               {Math.round(chem.level!)}%
                             </span>
                             <span
@@ -438,30 +441,35 @@ export default function UnitDashboardPage() {
               {globalCriticalTanks.length === 0 ? (
                 <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 border-2 border-emerald-500 px-3 py-2 rounded-xl shadow-sm">
                   <span className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                    <CheckCircle2
+                      size={14}
+                      className="shrink-0 text-emerald-600"
+                    />
                     <span>All Tanks Stable</span>
                   </span>
-                  <span className="text-[10px] font-semibold text-emerald-600">No tanks critical within 12h</span>
+                  <span className="text-[10px] font-semibold text-emerald-600">
+                    No tanks critical within 12h
+                  </span>
                 </div>
               ) : (
                 <div className="flex w-full flex-col gap-1.5 overflow-y-auto min-h-0 pr-1 pb-1 custom-scrollbar">
                   {globalCriticalTanks.map((ct) => (
                     <div
                       key={ct.tank}
-                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-orange-950 bg-orange-50 border-2 border-orange-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
+                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-50 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
                     >
                       <span className="truncate text-left flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-pulse shrink-0"></span>
+                        <span className="h-2.5 w-2.5 rounded-full bg-yellow-500 animate-pulse shrink-0"></span>
                         <span>{ct.tank}</span>
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-orange-800 whitespace-nowrap">
+                        <span className="text-[10px] text-yellow-800 whitespace-nowrap">
                           {ct.text}{" "}
                           {ct.level !== null && ct.target !== null
                             ? `(${new Intl.NumberFormat("id-ID").format(Math.round(ct.level))} -> ${new Intl.NumberFormat("id-ID").format(Math.round(ct.target))} mm)`
                             : ""}
                         </span>
-                        <span className="rounded bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm flex items-center gap-1 border border-orange-200">
+                        <span className="rounded bg-yellow-100 text-yellow-700 px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm flex items-center gap-1 border border-yellow-200">
                           <AlertTriangle size={10} />
                           Critical
                         </span>

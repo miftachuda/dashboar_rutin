@@ -183,7 +183,7 @@ export function getTargetEta(row: TankRow, tank?: TankRecord) {
   const eta = formatEta(hours);
   return {
     text: eta === "-" ? "-" : `Low in ${eta}`,
-    className: "text-orange-600",
+    className: "text-yellow-600",
     hours,
   };
 }

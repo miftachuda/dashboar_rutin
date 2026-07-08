@@ -47,7 +47,7 @@ function formatNumber(value: number, fractionDigits = 1) {
 function getRateClass(rate?: number) {
   if (rate == null) return "text-slate-400";
   if (rate > 0) return "text-emerald-600";
-  if (rate < 0) return "text-orange-600";
+  if (rate < 0) return "text-yellow-600";
   return "text-slate-600";
 }
 
@@ -255,7 +255,7 @@ function getTargetEta(row: TankRow, tank?: TankRecord) {
   const eta = formatEta(hours);
   return {
     text: eta === "-" ? "-" : `Low in ${eta}`,
-    className: "text-orange-600",
+    className: "text-yellow-600",
     hours,
   };
 }
@@ -604,7 +604,7 @@ const LiveTankLevel: React.FC = () => {
                                   ? "bg-slate-300"
                                   : isFresh
                                     ? "bg-emerald-500"
-                                    : "bg-orange-500"
+                                    : "bg-yellow-500"
                               }`}
                             />
                             {!hasData ? "No data" : ""}

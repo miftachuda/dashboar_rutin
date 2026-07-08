@@ -1150,18 +1150,15 @@ export default function MaintenanceCardList({
               }}
               role="button"
               tabIndex={0}
-              className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 ${
-                needsRedGlow ? "z-10 border-red-400" : "border-sky-100"
+              className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 ${
+                needsRedGlow ? "z-10 border-red-600" : "border-emerald-600"
               }`}
-            >
-              {needsRedGlow && (
-                <div className="pointer-events-none absolute inset-0 z-20 rounded-2xl shadow-[inset_0_0_25px_rgba(239,68,68,0.3)] ring-1 ring-inset ring-red-400/50" />
-              )}
+              >
               <div
                 className={`px-3 py-2 ${
                   needsRedGlow
-                    ? "bg-gradient-to-r from-red-50 to-orange-50"
-                    : "bg-gradient-to-r from-sky-50 to-cyan-50"
+                    ? "bg-red-500"
+                    : "bg-emerald-500"
                 }`}
               >
                 <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -1173,7 +1170,7 @@ export default function MaintenanceCardList({
                         className="h-12 w-16 shrink-0 rounded-xl border border-sky-100 object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-sky-200 bg-white/60 text-sky-300">
+                      <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-white/40 bg-white/20 text-white/70">
                         <ImageIcon size={18} />
                       </div>
                     )}
@@ -1195,8 +1192,8 @@ export default function MaintenanceCardList({
                           <span
                             className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
                               item.redundan === "n+0" 
-                                ? "bg-red-500 text-white" 
-                                : "bg-emerald-500 text-white"
+                                ? "bg-white text-red-600" 
+                                : "bg-white text-emerald-600"
                             }`}
                           >
                             {item.redundan}
@@ -1206,13 +1203,13 @@ export default function MaintenanceCardList({
 
                       <div className="mt-1 flex min-w-0 items-baseline gap-2">
                         <div className="flex min-w-0 items-baseline gap-2">
-                          <h2 className="min-w-0 shrink truncate text-base font-bold text-sky-900">
+                          <h2 className="min-w-0 shrink truncate text-base font-bold text-white">
                             {item.judul}
                           </h2>
-                          <span className="shrink-0 text-xs font-semibold text-sky-500">
+                          <span className="shrink-0 text-xs font-semibold text-white/60">
                             -
                           </span>
-                          <p className="min-w-0 flex-1 truncate text-xs italic text-sky-700">
+                          <p className="min-w-0 flex-1 truncate text-xs italic text-white/90">
                             <span className="font-semibold not-italic">
                               ISSUE :
                             </span>{" "}
@@ -1226,14 +1223,14 @@ export default function MaintenanceCardList({
                   <div className="flex w-full shrink-0 flex-col gap-1 md:w-56 md:items-end">
                     <div className="flex w-full items-center gap-2 md:justify-end">
                       <div className="min-w-0 flex-1 md:w-36 md:flex-none">
-                        <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-sky-700">
+                        <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-white/90">
                           <span>Progress</span>
                           <span>{progress}%</span>
                         </div>
 
-                        <div className="h-1.5 overflow-hidden rounded-full bg-sky-100">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-black/20">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
+                            className="h-full rounded-full bg-white transition-all"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -1244,7 +1241,7 @@ export default function MaintenanceCardList({
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setExportMenuTarget(item); }}
                           disabled={exportingId === item.id}
-                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-600 transition-all hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-60"
                           title="Export"
                         >
                           {exportingId === item.id ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
@@ -1253,7 +1250,7 @@ export default function MaintenanceCardList({
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setDeleteTarget(item); }}
                           disabled={deletingId === item.id}
-                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-60"
                           aria-label={`Delete ${item.judul}`}
                         >
                           {deletingId === item.id ? (
@@ -1265,7 +1262,7 @@ export default function MaintenanceCardList({
                       </div>
                     </div>
 
-                    <div className="text-right text-[10px] font-medium leading-4 text-slate-400">
+                    <div className="text-right text-[10px] font-medium leading-4 text-white/60">
                       Created: {formatTimeAgo(item.created)} | Updated:{" "}
                       {formatTimeAgo(item.updated)}
                     </div>
