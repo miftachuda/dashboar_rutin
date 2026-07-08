@@ -128,10 +128,10 @@ export default function UnitDashboardPage() {
                   (item) => item.redundan === "n+0",
                 );
                 let glowClass =
-                  "bg-emerald-500 border-2 border-emerald-600 text-white shadow-none hover:shadow-md";
+                  "bg-emerald-500 text-white shadow-none hover:shadow-md";
                 if (hasAnyRedundanN0) {
                   glowClass =
-                    "bg-red-500 border-2 border-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
+                    "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
                 }
 
                 const doneCount = listdata.filter(
@@ -217,7 +217,7 @@ export default function UnitDashboardPage() {
                       </div>
                     )}
 
-                    <div className="absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-sky-500 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0" />
+                    <div className="absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-white/40 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0" />
                   </button>
                 );
               })()}
@@ -232,10 +232,10 @@ export default function UnitDashboardPage() {
                 const color = getUnitColorPalette(unit);
 
                 let glowClass =
-                  "bg-emerald-500 border-2 border-emerald-600 text-white shadow-none hover:shadow-md";
+                  "bg-emerald-500 text-white shadow-none hover:shadow-md";
                 if (hasRedundanN0) {
                   glowClass =
-                    "bg-red-500 border-2 border-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
+                    "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:shadow-[0_0_20px_rgba(239,68,68,0.7)]";
                 }
 
                 const doneCount = unitItems.filter(
@@ -323,7 +323,7 @@ export default function UnitDashboardPage() {
                     )}
 
                     <div
-                      className={`absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 ${color.background} opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0`}
+                      className={`absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-white/40 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0`}
                     />
                   </button>
                 );
@@ -361,7 +361,7 @@ export default function UnitDashboardPage() {
 
                 if (lowChemicals.length === 0) {
                   return (
-                    <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 border-2 border-emerald-500 px-3 py-2 rounded-xl shadow-sm">
+                    <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 px-3 py-2 rounded-xl shadow-sm">
                       <span className="flex items-center gap-2">
                         <CheckCircle2
                           size={14}
@@ -382,7 +382,7 @@ export default function UnitDashboardPage() {
                       return (
                         <div
                           key={chem.tagName}
-                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
+                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 px-3 py-2 rounded-xl shadow-sm transition-colors"
                         >
                           <span className="truncate text-left flex items-center gap-2">
                             <span className="rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-900 shadow-sm shrink-0">
@@ -436,7 +436,7 @@ export default function UnitDashboardPage() {
               </div>
 
               {globalCriticalTanks.length === 0 ? (
-                <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 border-2 border-emerald-500 px-3 py-2 rounded-xl shadow-sm">
+                <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 px-3 py-2 rounded-xl shadow-sm">
                   <span className="flex items-center gap-2">
                     <CheckCircle2
                       size={14}
@@ -453,7 +453,7 @@ export default function UnitDashboardPage() {
                   {globalCriticalTanks.map((ct) => (
                     <div
                       key={ct.tank}
-                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 border-2 border-yellow-500 px-3 py-2 rounded-xl shadow-sm transition-colors"
+                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 px-3 py-2 rounded-xl shadow-sm transition-colors"
                     >
                       <span className="truncate text-left flex items-center gap-2">
                         <span className="h-2.5 w-2.5 rounded-full bg-yellow-100 animate-pulse shrink-0"></span>
@@ -481,7 +481,7 @@ export default function UnitDashboardPage() {
           {/* SECTION 4: LIMS */}
           <section id="lims" className="w-full">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 bg-pink-100 text-pink-600 rounded-lg">
+              <div className="p-2 bg-pink-100 text-red-300 rounded-lg">
                 <FlaskConical size={20} />
               </div>
               <h2 className="text-xl font-bold text-sky-950">
