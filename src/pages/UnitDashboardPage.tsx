@@ -342,14 +342,12 @@ export default function UnitDashboardPage() {
 
         <div className="flex flex-col xl:flex-row w-full gap-6">
           {/* SECTION 2: CHEMICAL STOCK */}
-          <section id="chemical" className="w-full xl:w-1/3 flex flex-col">
+          <section id="chemical" className="w-full xl:w-1/2 flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
                 <Droplets size={20} />
               </div>
-              <h2 className="text-xl font-bold text-sky-950">
-                Live Chemical Stock
-              </h2>
+              <h2 className="text-xl font-bold text-sky-950">Chemical Stock</h2>
             </div>
 
             {(() => {
@@ -423,7 +421,7 @@ export default function UnitDashboardPage() {
           </section>
 
           {/* SECTION 3: LEVEL TANKI */}
-          <section id="tanki" className="w-full xl:w-1/3 flex flex-col">
+          <section id="tanki" className="w-full xl:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
@@ -507,9 +505,10 @@ export default function UnitDashboardPage() {
               </div>
             )}
           </section>
+        </div>
 
           {/* SECTION 4: LIMS */}
-          <section id="lims" className="w-full xl:w-1/3 flex flex-col">
+          <section id="lims" className="w-full flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-pink-100 text-pink-600 rounded-lg">
                 <FlaskConical size={20} />
@@ -529,10 +528,10 @@ export default function UnitDashboardPage() {
                 loading={limsLoading}
                 limit={limsLimit}
                 onlyOOS={true}
+                format="table"
               />
             )}
           </section>
-        </div>
 
         {/* SECTION 5: CONSUMABLE MATERIAL */}
         <section id="material" className="w-full">
