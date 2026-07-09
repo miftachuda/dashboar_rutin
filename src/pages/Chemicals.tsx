@@ -126,7 +126,7 @@ const vesselLevelRequestBody = [
 const vesselLevelConfigs: VesselLevelConfig[] = [
   {
     tagName: "023LI_019.PV",
-    label: "FUR",
+    label: "Furfural",
     subtitle: "Furfural",
     chemical: "FUR",
     visual: "vertical",
@@ -144,7 +144,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
   },
   {
     tagName: "024LI_026.PV", //024LI_025.PV
-    label: "TOL",
+    label: "Toluene",
     subtitle: "Toluene",
     chemical: "TOL",
     visual: "vertical",
@@ -153,7 +153,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
   },
   {
     tagName: "022LI_021.PV",
-    label: "PROP",
+    label: "Propane",
     subtitle: "022V-103",
     chemical: "PROP",
     visual: "horizontal",
@@ -162,7 +162,7 @@ const vesselLevelConfigs: VesselLevelConfig[] = [
   },
   {
     tagName: "024LI_052.PV",
-    label: "PROP",
+    label: "Propane",
     subtitle: "024V-112",
     chemical: "PROP",
     visual: "horizontal",

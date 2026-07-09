@@ -16,6 +16,7 @@ import LiveTankLevel from "./pages/LiveTankLevel.tsx";
 import Pitstop2026 from "./pages/Pitstop2026.tsx";
 import Pitstop2027 from "./pages/pitstop2027/Pitstop2027.tsx";
 import TurnAround2028 from "./pages/turnaround2028/TurnAround2028.tsx";
+import IsolationList from "./pages/IsolationList.tsx";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/pitstop-2026" element={<Pitstop2026 />} />
           <Route path="/pitstop-2027" element={<Pitstop2027 />} />
           <Route path="/turn-around-2028" element={<TurnAround2028 />} />
+          <Route path="/isolation-list" element={<IsolationList />} />
           <Route path="/accounts" element={<AccountPage />} />
           <Route path="/settings" element={<SettingPage />} />
           <Route path="*" element={<NotFound />} />

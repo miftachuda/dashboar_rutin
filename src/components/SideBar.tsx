@@ -12,6 +12,7 @@ import {
   Activity,
   Gauge,
   Droplets,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -103,6 +104,12 @@ export default function Sidebar({
           name: "LIMS",
           path: "/lims",
           icon: FlaskConical,
+          badge: null,
+        },
+        {
+          name: "Isolation List",
+          path: "/isolation-list",
+          icon: FileSpreadsheet,
           badge: null,
         },
       ],

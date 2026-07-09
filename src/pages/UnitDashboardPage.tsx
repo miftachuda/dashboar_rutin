@@ -121,7 +121,7 @@ export default function UnitDashboardPage() {
               <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="flex flex-row overflow-x-auto w-full gap-2 pt-2 pb-4 px-1 -mx-1 custom-scrollbar snap-x">
+            <div className="flex flex-row overflow-x-auto w-full gap-3 pt-4 pb-5 px-2 custom-scrollbar snap-x">
               {/* ALL UNITS CARD */}
               {(() => {
                 const hasAnyRedundanN0 = listdata.some(
@@ -151,10 +151,10 @@ export default function UnitDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleUnitClick("")}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[16.25rem] flex-[1.5] snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[12rem] flex-1 snap-start`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
-                      <p className="rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
+                      <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
                         All
                       </p>
                       <div className="flex items-baseline gap-1.5 text-5xl font-bold leading-none">
@@ -170,7 +170,7 @@ export default function UnitDashboardPage() {
                       );
                       if (n0ItemsAll.length === 0) return null;
                       return (
-                        <div className="mt-4 flex w-full max-h-24 flex-col items-start gap-1.5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="mt-4 flex w-full flex-col items-start gap-1.5">
                           {n0ItemsAll.map((item, index) => (
                             <div
                               key={item.id}
@@ -259,7 +259,7 @@ export default function UnitDashboardPage() {
                     className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-3 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[9.375rem] flex-1 snap-start`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
-                      <p className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
+                      <p className="rounded-full px-3 py-1.5 text-sm font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
                         {unit}
                       </p>
                       <div className="flex items-baseline gap-1 text-3xl font-bold leading-none">
@@ -275,7 +275,7 @@ export default function UnitDashboardPage() {
                       );
                       if (n0Items.length === 0) return null;
                       return (
-                        <div className="mt-4 flex w-full max-h-24 flex-col items-start gap-1.5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="mt-4 flex w-full flex-col items-start gap-1.5">
                           {n0Items.map((item, index) => (
                             <div
                               key={item.id}
@@ -377,34 +377,38 @@ export default function UnitDashboardPage() {
                 }
 
                 return (
-                  <div className="flex w-full flex-col gap-1.5 overflow-y-auto min-h-0 pr-1 pb-1 custom-scrollbar">
-                    {lowChemicals.map((chem) => {
-                      return (
-                        <div
-                          key={chem.tagName}
-                          className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 px-3 py-2 rounded-xl shadow-sm transition-colors"
-                        >
-                          <span className="truncate text-left flex items-center gap-2">
-                            <span className="rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-900 shadow-sm shrink-0">
-                              {chem.unit}
+                  <div className="flex flex-row overflow-x-auto w-full gap-3 pt-4 pb-5 px-2 custom-scrollbar snap-x">
+                    <button
+                      type="button"
+                      className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start"
+                    >
+                      <div className="flex w-full items-start justify-between gap-2">
+                        <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-yellow-600 text-white shadow-sm">
+                          Low Chemicals
+                        </p>
+                      </div>
+
+                      <div className="mt-4 flex w-full flex-col items-start gap-1.5">
+                        {lowChemicals.map((chem, index) => (
+                          <div
+                            key={chem.tagName}
+                            className="flex w-full items-center justify-between gap-1 text-[10px] font-bold text-yellow-900 bg-yellow-100/90 px-2 py-1.5 rounded-md border border-yellow-300 shadow-sm"
+                          >
+                            <span className="truncate text-left flex items-center gap-1.5">
+                              <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse shrink-0"></span>
+                              <span>
+                                {index + 1}. {chem.unit} - {chem.label}
+                              </span>
                             </span>
-                            <AlertTriangle
-                              size={14}
-                              className="shrink-0 text-yellow-900"
-                            />
-                            <span>{chem.label}</span>
-                            <span className="text-[10px] font-semibold text-yellow-900/80 hidden sm:inline">
-                              ({chem.subtitle})
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-sm font-extrabold tracking-wide text-yellow-900">
+                            <span className="shrink-0 rounded bg-yellow-500 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white shadow-sm">
                               {Math.round(chem.level!)}%
                             </span>
                           </div>
-                        </div>
-                      );
-                    })}
+                        ))}
+                      </div>
+
+                      <div className="absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-white/40 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0" />
+                    </button>
                   </div>
                 );
               })()}
@@ -449,30 +453,43 @@ export default function UnitDashboardPage() {
                   </span>
                 </div>
               ) : (
-                <div className="flex w-full flex-col gap-1.5 overflow-y-auto min-h-0 pr-1 pb-1 custom-scrollbar">
-                  {globalCriticalTanks.map((ct) => (
-                    <div
-                      key={ct.tank}
-                      className="flex w-full items-center justify-between gap-2 text-xs font-bold text-yellow-950 bg-yellow-400 px-3 py-2 rounded-xl shadow-sm transition-colors"
-                    >
-                      <span className="truncate text-left flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-yellow-100 animate-pulse shrink-0"></span>
-                        <span>{ct.tank}</span>
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-yellow-900 whitespace-nowrap">
-                          {ct.text}{" "}
-                          {ct.level !== null && ct.target !== null
-                            ? `(${new Intl.NumberFormat("id-ID").format(Math.round(ct.level))} -> ${new Intl.NumberFormat("id-ID").format(Math.round(ct.target))} mm)`
-                            : ""}
-                        </span>
-                        <span className="rounded bg-yellow-500 text-yellow-950 px-1.5 py-0.5 text-[9px] uppercase tracking-wide shadow-sm flex items-center gap-1 border border-yellow-600">
-                          <AlertTriangle size={10} />
-                          Critical
-                        </span>
-                      </div>
+                <div className="flex flex-row overflow-x-auto w-full gap-3 pt-4 pb-5 px-2 custom-scrollbar snap-x">
+                  <button
+                    type="button"
+                    className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start"
+                  >
+                    <div className="flex w-full items-start justify-between gap-2">
+                      <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-yellow-600 text-white shadow-sm">
+                        Critical Tanks
+                      </p>
                     </div>
-                  ))}
+
+                    <div className="mt-4 flex w-full flex-col items-start gap-1.5">
+                      {globalCriticalTanks.map((ct, index) => (
+                        <div
+                          key={ct.tank}
+                          className="flex w-full items-center justify-between gap-1 text-[10px] font-bold text-yellow-900 bg-yellow-100/90 px-2 py-1.5 rounded-md border border-yellow-300 shadow-sm"
+                        >
+                          <span className="truncate text-left flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse shrink-0"></span>
+                            <span>
+                              {index + 1}. {ct.tank}
+                            </span>
+                          </span>
+                          <div className="flex gap-1 shrink-0">
+                            <span className="rounded bg-white/50 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-yellow-950 shadow-sm border border-yellow-200">
+                              {ct.text}
+                            </span>
+                            <span className="rounded bg-yellow-500 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white shadow-sm flex items-center gap-1">
+                              <AlertTriangle size={8} /> CRIT
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-white/40 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0" />
+                  </button>
                 </div>
               )}
             </section>

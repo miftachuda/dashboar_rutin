@@ -12,11 +12,11 @@ export type LiveChemical = {
 };
 
 const vesselConfigs = [
-  { tagName: "023LI_019.PV", label: "FUR", subtitle: "Furfural", unit: "023" },
+  { tagName: "023LI_019.PV", label: "Furfural", subtitle: "Furfural", unit: "023" },
   { tagName: "024LI_023.PV", label: "MEK", subtitle: "MEK", unit: "024" },
-  { tagName: "024LI_026.PV", label: "TOL", subtitle: "Toluene", unit: "024" },
-  { tagName: "022LI_021.PV", label: "PROP", subtitle: "022V-103", unit: "022" },
-  { tagName: "024LI_052.PV", label: "PROP", subtitle: "024V-112", unit: "024" },
+  { tagName: "024LI_026.PV", label: "Toluene", subtitle: "Toluene", unit: "024" },
+  { tagName: "022LI_021.PV", label: "Propane", subtitle: "022V-103", unit: "022" },
+  { tagName: "024LI_052.PV", label: "Propane", subtitle: "024V-112", unit: "024" },
 ];
 
 export function useLiveChemicals() {
