@@ -22,6 +22,7 @@ import {
   Droplets,
   Wrench,
   FlaskConical,
+  Cylinder,
 } from "lucide-react";
 
 const unitFilterOptions = ["002", "021", "022", "023", "024", "025", "041"];
@@ -151,7 +152,7 @@ export default function UnitDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleUnitClick("")}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[12rem] flex-1 snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[12rem] flex-1 snap-start text-left`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
                       <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
@@ -256,7 +257,7 @@ export default function UnitDashboardPage() {
                     key={unit}
                     type="button"
                     onClick={() => handleUnitClick(unit)}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-3 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[9.375rem] flex-1 snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-3 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[9.375rem] flex-1 snap-start text-left`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
                       <p className="rounded-full px-3 py-1.5 text-sm font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
@@ -333,15 +334,15 @@ export default function UnitDashboardPage() {
         </section>
 
         <div className="flex flex-col w-full gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col xl:flex-row w-full gap-4">
+          <div className="flex flex-col xl:flex-row flex-wrap w-full gap-6 justify-start items-start">
             {/* SECTION 2: CHEMICAL STOCK */}
-            <section id="chemical" className="w-full xl:w-1/2 flex flex-col">
+            <section id="chemical" className="flex flex-col min-w-0">
               <div className="flex items-center gap-2 mb-2 shrink-0">
                 <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
                   <Droplets size={20} />
                 </div>
                 <h2 className="text-xl font-bold text-sky-950">
-                  Live Chemical Stock
+                  Chemical Stock
                 </h2>
               </div>
 
@@ -380,7 +381,7 @@ export default function UnitDashboardPage() {
                   <div className="flex flex-row overflow-x-auto w-full gap-3 pt-4 pb-5 px-2 custom-scrollbar snap-x">
                     <button
                       type="button"
-                      className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start"
+                      className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start text-left"
                     >
                       <div className="flex w-full items-start justify-between gap-2">
                         <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-yellow-600 text-white shadow-sm">
@@ -415,11 +416,11 @@ export default function UnitDashboardPage() {
             </section>
 
             {/* SECTION 3: LEVEL TANKI */}
-            <section id="tanki" className="w-full xl:w-1/2 flex flex-col">
+            <section id="tanki" className="flex flex-col min-w-0">
               <div className="flex items-center justify-between mb-2 shrink-0">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                    <Droplets size={20} />
+                    <Cylinder size={20} />
                   </div>
                   <h2 className="text-xl font-bold text-sky-950">
                     Critical Tank
@@ -456,7 +457,7 @@ export default function UnitDashboardPage() {
                 <div className="flex flex-row overflow-x-auto w-full gap-3 pt-4 pb-5 px-2 custom-scrollbar snap-x">
                   <button
                     type="button"
-                    className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start"
+                    className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start text-left"
                   >
                     <div className="flex w-full items-start justify-between gap-2">
                       <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-yellow-600 text-white shadow-sm">
@@ -496,9 +497,9 @@ export default function UnitDashboardPage() {
           </div>
 
           {/* SECTION 4: LIMS */}
-          <section id="lims" className="w-full">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 bg-pink-100 text-red-300 rounded-lg">
+          <section id="lims" className="flex flex-col min-w-0 w-full mt-2">
+            <div className="flex items-center gap-2 mb-2 shrink-0">
+              <div className="p-2 bg-pink-100 text-pink-600 rounded-lg">
                 <FlaskConical size={20} />
               </div>
               <h2 className="text-xl font-bold text-sky-950">
@@ -516,7 +517,7 @@ export default function UnitDashboardPage() {
                 loading={limsLoading}
                 limit={limsLimit}
                 onlyOOS={true}
-                format="table"
+                format="dashboard-alert"
                 enableHighlight={true}
               />
             )}

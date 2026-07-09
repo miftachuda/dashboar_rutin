@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { SampleLimit } from "@/types/SampleLimit";
+import { CheckCircle2 } from "lucide-react";
 
 const groupColors = [
   "border-emerald-200 shadow-emerald-100/80",
@@ -172,7 +173,7 @@ const SampleGroups: React.FC<{
   loading?: boolean;
   limit: SampleLimit[];
   onlyOOS?: boolean;
-  format?: "card" | "table";
+  format?: "card" | "table" | "dashboard-alert";
   enableHighlight?: boolean;
 }> = ({ data, loading = false, limit, onlyOOS = false, format = "card", enableHighlight = false }) => {
   // ✅ ALL HOOKS MUST ALWAYS RUN
@@ -212,12 +213,9 @@ const SampleGroups: React.FC<{
     );
   }
 
-  return (
-    <div className="text-slate-700 w-full h-full">
-      <div className="flex flex-row w-full gap-3">
-        {(() => {
-          let renderedGroups = 0;
-          const elements = Object.entries(grouped).map(([prefix, groupSamples], idx) => {
+  const renderContent = () => {
+    let renderedGroups = 0;
+    const elements = Object.entries(grouped).map(([prefix, groupSamples], idx) => {
             const validSamples = [];
 
             for (const [sampleIdOriginal, sampleData] of Object.entries(groupSamples as any)) {
@@ -270,6 +268,59 @@ const SampleGroups: React.FC<{
             }
 
             if (validSamples.length === 0) return null;
+
+            if (format === "dashboard-alert") {
+              const alertProps: any[] = [];
+              validSamples.forEach(({ sampleIdOriginal, sampleName, processedProps }) => {
+                processedProps.forEach((p: any) => {
+                  // ONLY show if it's highlighted AND out of spec (text-red-600)
+                  if (p.highlighted && p.valueClass === "text-red-600") {
+                    alertProps.push({ sampleIdOriginal, sampleName, ...p });
+                  }
+                });
+              });
+
+              if (alertProps.length === 0) return null;
+              renderedGroups++;
+
+              return (
+                <button
+                  key={prefix}
+                  type="button"
+                  className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-yellow-500 text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start text-left"
+                >
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-yellow-600 text-white shadow-sm">
+                      Unit {prefix} {prefix === "023" ? feed023 : prefix === "024" ? feed024 : ""}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex w-full flex-col items-start gap-1.5">
+                    {alertProps.map((p, index) => (
+                      <div
+                        key={`${p.sampleIdOriginal as string}-${p.propName}`}
+                        className="flex w-full items-center justify-between gap-1 text-[10px] font-bold text-yellow-900 bg-yellow-100/90 px-2 py-1.5 rounded-md border border-yellow-300 shadow-sm"
+                      >
+                        <span className="truncate text-left flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+                          <span className="truncate">
+                            {p.sampleName as string} - {p.propName}
+                          </span>
+                        </span>
+                        <div className="flex gap-1 shrink-0 items-center">
+                          <span className="rounded bg-white/50 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-red-600 shadow-sm border border-red-200">
+                            {p.prop.value}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-white/40 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0" />
+                </button>
+              );
+            }
+
             renderedGroups++;
 
               return (
@@ -383,6 +434,19 @@ const SampleGroups: React.FC<{
           });
 
           if (onlyOOS && renderedGroups === 0) {
+            if (format === "dashboard-alert") {
+              return (
+                <div className="flex w-full items-center justify-between gap-2 text-xs font-bold text-emerald-950 bg-emerald-50 px-3 py-2 rounded-xl shadow-sm">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                    <span>LIMS Parameters Stable</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-emerald-600">
+                    No critical OOS alerts
+                  </span>
+                </div>
+              );
+            }
             return (
               <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 flex flex-col items-center justify-center text-center gap-2 w-full h-full">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 text-xl font-bold">✓</div>
@@ -392,11 +456,28 @@ const SampleGroups: React.FC<{
             );
           }
 
-          return elements;
-        })()}
-        </div>
-      </div>
-    );
+    return elements;
   };
+
+  if (format === "dashboard-alert") {
+    const content = renderContent();
+    if (Array.isArray(content)) {
+      return (
+        <div className="flex flex-row overflow-x-auto w-full gap-3 pt-4 pb-5 px-2 custom-scrollbar snap-x">
+          {content}
+        </div>
+      );
+    }
+    return <>{content}</>;
+  }
+
+  return (
+    <div className="text-slate-700 w-full h-full">
+      <div className="flex flex-row flex-wrap w-full gap-3">
+        {renderContent()}
+      </div>
+    </div>
+  );
+};
 
 export default SampleGroups;
