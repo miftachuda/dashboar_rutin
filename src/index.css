@@ -87,6 +87,9 @@
 }
 
 @layer base {
+  html {
+    font-size: 88%;
+  }
   * {
     @apply border-border;
   }

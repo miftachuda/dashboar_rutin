@@ -151,7 +151,7 @@ export default function UnitDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleUnitClick("")}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[130px] shrink-0 min-w-[260px] flex-[1.5] snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[16.25rem] flex-[1.5] snap-start`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
                       <p className="rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">
@@ -256,7 +256,7 @@ export default function UnitDashboardPage() {
                     key={unit}
                     type="button"
                     onClick={() => handleUnitClick(unit)}
-                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-3 transition-all hover:-translate-y-1 ${glowClass} min-h-[130px] shrink-0 min-w-[150px] flex-1 snap-start`}
+                    className={`group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-3 transition-all hover:-translate-y-1 ${glowClass} min-h-[8.125rem] shrink-0 min-w-[9.375rem] flex-1 snap-start`}
                   >
                     <div className="flex w-full items-start justify-between gap-2">
                       <p className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-all bg-slate-500 text-white shadow-sm">

@@ -11,6 +11,7 @@ import {
   FlaskConical,
   Activity,
   Gauge,
+  Droplets,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -77,7 +78,7 @@ export default function Sidebar({
         {
           name: "Chemical",
           path: "/chemical",
-          icon: Inbox,
+          icon: Droplets,
           badge: null,
         },
         {
