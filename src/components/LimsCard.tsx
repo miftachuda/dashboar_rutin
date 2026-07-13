@@ -267,7 +267,34 @@ const SampleGroups: React.FC<{
               }
             }
 
-            if (validSamples.length === 0) return null;
+            const renderGreenCard = () => {
+              renderedGroups++;
+              return (
+                <button
+                  key={prefix}
+                  type="button"
+                  className="group relative overflow-hidden flex flex-col items-start justify-start gap-0 rounded-3xl p-4 transition-all hover:-translate-y-1 bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] hover:shadow-[0_0_20px_rgba(16,185,129,0.7)] min-h-[8.125rem] shrink-0 min-w-[16.25rem] max-w-[22rem] snap-start text-left"
+                >
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <p className="rounded-full px-4 py-1.5 text-base font-bold uppercase tracking-wide transition-all bg-emerald-600 text-white shadow-sm">
+                      Unit {prefix} {prefix === "023" ? feed023 : prefix === "024" ? feed024 : ""}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex w-full flex-col items-center justify-center gap-1.5 flex-1">
+                    <CheckCircle2 size={36} className="text-emerald-200/80 mb-1" />
+                    <span className="text-sm font-bold text-emerald-50">All Samples In-Spec</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 h-1.5 w-full transition-all duration-300 bg-white/40 opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0" />
+                </button>
+              );
+            };
+
+            if (validSamples.length === 0) {
+              if (format === "dashboard-alert") {
+                return renderGreenCard();
+              }
+              return null;
+            }
 
             if (format === "dashboard-alert") {
               const alertProps: any[] = [];
@@ -280,7 +307,9 @@ const SampleGroups: React.FC<{
                 });
               });
 
-              if (alertProps.length === 0) return null;
+              if (alertProps.length === 0) {
+                return renderGreenCard();
+              }
               renderedGroups++;
 
               return (
@@ -304,7 +333,7 @@ const SampleGroups: React.FC<{
                         <span className="truncate text-left flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
                           <span className="truncate">
-                            {p.sampleName as string} - {p.propName}
+                            {p.sampleName as string} ({p.sampleIdOriginal as string}) - {p.propName}
                           </span>
                         </span>
                         <div className="flex gap-1 shrink-0 items-center">
