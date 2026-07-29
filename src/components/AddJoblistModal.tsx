@@ -18,7 +18,7 @@ type Props = {
   collectionName?: string;
 };
 
-const disciplineOptions = ["Rotating", "Stationary", "Instrument", "Electrical"];
+const disciplineOptions = ["Rotating", "Stationary", "Instrument", "Electrical", "OLLS"];
 const priorityOptions: Priority[] = ["low", "medium", "high", "critical"];
 
 const fieldDefaults = {

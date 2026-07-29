@@ -38,7 +38,8 @@ type discipline =
   | "Instrument"
   | "Electrical"
   | "Operation"
-  | "Other";
+  | "Other"
+  | "OLLS";
 const statusColor: Record<ActivityItem["status"], string> = {
   open: "bg-red-100 text-red-700",
   "need support": "bg-yellow-100 text-yellow-700",

@@ -19,6 +19,7 @@ const disciplineKpiLabels = [
   "Instrument",
   "Electrical",
   "Rotating",
+  "OLLS",
 ];
 
 const unitFilterOptions = ["002", "021", "022", "023", "024", "025", "041"];
@@ -34,6 +35,7 @@ const getDisciplinePopClass = (discipline: string) => {
     case "instrument": return "bg-emerald-500 text-white border-emerald-600";
     case "electrical": return "bg-amber-500 text-white border-amber-600";
     case "rotating": return "bg-purple-500 text-white border-purple-600";
+    case "olls": return "bg-teal-500 text-white border-teal-600";
     default: return "bg-sky-500 text-white border-sky-600";
   }
 };

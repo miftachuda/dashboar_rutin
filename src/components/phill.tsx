@@ -1,4 +1,4 @@
-import { Wrench, Tag, Bolt, Cog, Factory, Gauge, Zap } from "lucide-react";
+import { Wrench, Tag, Bolt, Cog, Factory, Gauge, Zap, Cylinder } from "lucide-react";
 
 type PillCardProps = {
   discipline: string;
@@ -85,6 +85,13 @@ const disciplineColorPalettes: Record<
     iconBackground: "bg-yellow-100",
     iconText: "text-yellow-700",
     text: "text-yellow-950",
+  },
+  olls: {
+    border: "border-teal-200",
+    background: "bg-teal-50",
+    iconBackground: "bg-teal-100",
+    iconText: "text-teal-700",
+    text: "text-teal-950",
   },
 };
 
@@ -193,6 +200,8 @@ const getDisciplineIcon = (discipline: string) => {
       return <Gauge size={14} />;
     case "electrical":
       return <Zap size={14} />;
+    case "olls":
+      return <Cylinder size={14} />;
     default:
       return <Wrench size={14} />;
   }

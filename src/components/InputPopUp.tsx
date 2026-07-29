@@ -22,6 +22,7 @@ const disciplineOptions = [
   "Stationary",
   "Instrument",
   "Electrical",
+  "OLLS",
 ];
 const unitOptions = ["002", "021", "022", "023", "024", "025", "041"];
 const typeOptions = [
